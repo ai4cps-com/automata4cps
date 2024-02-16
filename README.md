@@ -14,7 +14,7 @@ The code was developed for several research publications:
 
 ## Simple example
 
-``` 
+```python
 import automata4cps as at
 
 A = at.Automaton()
