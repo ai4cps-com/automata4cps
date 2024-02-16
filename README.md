@@ -5,8 +5,8 @@ of the behavior of hybrid dynamical systems, with the focus on
 Cyber-Physical Systems (CPS).
 The code was developed for several research publications ([bibtex](cite.bib)).
 
--   Website (to be provided)
--   Contact (to be provided)
+-   Website (www.ai4cps.com/automata4cps - under construction)
+-   Contact ([contact@ai4cps.com](mailto:contact@ai4cps.com))
 
 
 ## Simple example
@@ -40,6 +40,8 @@ pip install ...
 
 
 ## Bugs
+If you find any bugs, please contact us at [bugs@ai4cps.com](mailto:bugs@ai4cps.com).
+
 
 ## License
 
