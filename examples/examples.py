@@ -73,3 +73,12 @@ if __name__ == "__main__":
     A = simple_conveyor_system()
     A.view_plotly().show()
     ddata = A.simulate(finish_time=500)
+
+    A = Automaton()
+    A.add_state(["s1", "s2", "s3"])
+    A.add_transition([("s1", "s2", "e1"),
+                      ("s2", "s3", "e1"),
+                      ("s3", "s1", "e2")])
+
+    print(A)
+    A.view_plotly().show()
