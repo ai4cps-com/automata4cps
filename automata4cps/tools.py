@@ -1,9 +1,5 @@
 import pandas as pd
-from datetime import datetime, timedelta
 from plotly import graph_objects as go
-from plotly import figure_factory as ff
-import plotly as plotly
-import networkx as nx
 from plotly.subplots import make_subplots
 import numpy as np
 from plotly import colors as clr
@@ -197,6 +193,7 @@ def plot_data(data, title=None, timestamp=None, discrete=False, height=None, plo
 
 
 if __name__ == "__main__":
-    import examples
+    from examples import examples
+
     data = examples.high_rack_storage_system_sfowl()
     data = split_data_on_signal_value(data, sig_name="O_w_BRU_Axis_Ctrl", new_value=3)

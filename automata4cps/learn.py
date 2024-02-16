@@ -1,8 +1,6 @@
 from automata import Automaton
 from collections import OrderedDict
-import pandas as pd
 import pprint
-import tools
 
 
 def simple_learn_from_event_logs(data, initial=True, verbose=False):
@@ -209,7 +207,7 @@ def extend_states(alphabet, bandwidth, max_density_at_split, verbose=False):
 
 
 if __name__ == "__main__":
-    import examples
+    from examples import examples
     import tools
 
     data = examples.high_rack_storage_system_sfowl()

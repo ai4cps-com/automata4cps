@@ -1,4 +1,4 @@
-from automata import Automaton
+from automata4cps.automata import Automaton
 import numpy as np
 import pandas as pd
 import os
