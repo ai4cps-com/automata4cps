@@ -833,18 +833,3 @@ def signal_vector_to_state(sig_vec):
 def signal_vector_to_event(previous_vec, sig_vec):
     return
 
-class Mode:
-    def __init__(self, type):
-        self.type = type
-
-
-if __name__ == "__main__":
-    A = Automaton()
-
-    A.add_state(["s1", "s2", "s3"])
-    A.add_transition([("s1", "s2", "e1"),
-                      ("s2", "s3", "e1"),
-                      ("s3", "s1", "e2")])
-
-    print(A)
-    A.view_plotly().show()

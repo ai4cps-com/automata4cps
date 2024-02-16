@@ -3,10 +3,7 @@
 Automata4CPS is a Python package for learning and analysis 
 of the behavior of hybrid dynamical systems, with the focus on 
 Cyber-Physical Systems (CPS).
-The code was developed for several research publications:
-
->-To be added-
-
+The code was developed for several research publications ([bibtex](cite.bib)).
 
 -   Website (to be provided)
 -   Contact (to be provided)
@@ -46,4 +43,5 @@ pip install ...
 
 ## License
 
-See [LICENSE](LICENSE).
+See [LICENSE](LICENSE).  
+If you use this code in your research please [cite](cite.bib) our work. 
