@@ -1,7 +1,5 @@
 # Automata4CPS 
 
---- 
-
 Automata4CPS is a Python package for learning and analysis 
 of the behavior of hybrid dynamical systems, with the focus on 
 Cyber-Physical Systems (CPS).
@@ -15,9 +13,6 @@ The code was developed for several research publications:
 
 
 ## Simple example
-
----
-
 
 ``` 
 import automata4cps as at
@@ -34,15 +29,11 @@ A.view_plotly().show()
 
 ## Jupyter notebook examples
 
----
-
 - [Conveyor system SFOWL discrete data analysis](notebooks/Conveyors_SFOWL_discrete.ipynb)
 - [Conveyor system SFOWL continuous data analysis](notebooks/Conveyors_SFOWL_cont.ipynb)
 
 
-## Install 
-
----
+## Install
 
 To install Automata4CPS:
 
@@ -53,10 +44,6 @@ pip install ...
 
 ## Bugs
 
----
-
 ## License
-
----
 
 See [LICENSE](LICENSE).
