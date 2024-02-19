@@ -38,6 +38,15 @@ To install Automata4CPS:
 pip install ...
 ```
 
+## Data
+
+In folder "data" there are several datasets which can be easily loaded using examples module.
+E.g. 
+```python
+import examples
+discrete_data, timestamp_col, discrete_vars = examples.conveyor_system_sfowl("discrete")
+```
+will load a dataset of a conveyor system from the SFOWL.
 
 ## Bugs
 If you find any bugs, please contact us at [bugs@ai4cps.com](mailto:bugs@ai4cps.com).
