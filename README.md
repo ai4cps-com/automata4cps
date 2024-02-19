@@ -41,9 +41,12 @@ pip install ...
 ## Data
 
 In folder "data" there are several datasets which can be easily loaded using examples module.
-E.g. 
+E.g.
+
 ```python
-import examples
+
+from automata4cps import examples
+
 discrete_data, timestamp_col, discrete_vars = examples.conveyor_system_sfowl("discrete")
 ```
 will load a dataset of a conveyor system from the SFOWL.

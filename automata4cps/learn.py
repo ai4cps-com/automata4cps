@@ -1,4 +1,4 @@
-from automata import Automaton
+from automata4cps import Automaton
 from collections import OrderedDict
 import pprint
 
@@ -207,7 +207,7 @@ def extend_states(alphabet, bandwidth, max_density_at_split, verbose=False):
 
 
 if __name__ == "__main__":
-    from examples import examples
+    from automata4cps.examples import examples
     import tools
 
     data = examples.high_rack_storage_system_sfowl()
