@@ -55,11 +55,9 @@ def conveyor_system_sfowl(variable_type="all"):
     cont_cols = [c for c in data[0].columns if c.lower()[-5:] != '_ctrl' and c != "timestamp"]
 
     if variable_type == "discrete":
-
         discrete_data = [d[['timestamp'] + discrete_cols] for d in data]
         return discrete_data, "timestamp", discrete_cols
     elif variable_type == "continuous":
-
         cont_data = [d[['timestamp'] + cont_cols] for d in data]
         return cont_data, "timestamp", cont_cols
     else:

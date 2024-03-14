@@ -10,8 +10,8 @@ def remove_timestamps_without_change(data, sig_names):
     new_data = []
     for d in data:
         ind = (d[sig_names].diff() != 0).any(axis=1)
-        d = d.loc[ind]
-        new_data.append(d.copy())
+        dd = d.loc[ind]
+        new_data.append(dd.copy(deep=True))
     return new_data
 
 
@@ -40,7 +40,7 @@ def group_data_on_discrete_state(data, state_column, reset_time=False, time_col=
             if state not in sequences:
                 sequences[state] = list()
             if reset_time:
-                dd[time_col] = dd[time_col] - dd[time_col].iloc[0]
+                dd[time_col] -= dd[time_col].iloc[0]
             sequences[state].append(dd)
     return sequences
 
@@ -54,11 +54,10 @@ def split_data_on_signal_value(data, sig_name, new_value):
     return new_data
 
 
-def plot_data(data, title=None, timestamp=None, discrete=False, height=None, plotStates=False, limit_num_points=None,
-              customdata=None,
-              iterate_colors=True, y_title_font_size=14, opacity=1, vertical_spacing=0.005, sharey=False, bounds=None,
-              plot_only_changes=False, yAxisLabelOffset=False, marker_size=4, showlegend=False, mode='lines+markers',
-              **kwargs):
+def plot_data(data, title=None, timestamp=None, use_columns=None, discrete=False, height=None, plotStates=False, limit_num_points=None,
+              customdata=None, iterate_colors=True, y_title_font_size=14, opacity=1, vertical_spacing=0.005,
+              sharey=False, bounds=None, plot_only_changes=False, yAxisLabelOffset=False, marker_size=4,
+              showlegend=False, mode='lines+markers', **kwargs):
     """
     Plots all variables in the dataframe as subplots.
 
@@ -90,7 +89,12 @@ def plot_data(data, title=None, timestamp=None, discrete=False, height=None, plo
     if height is None:
         height = len(data[0].columns) * 60
 
-    fig = make_subplots(rows=len(data[0].columns), cols=1, shared_xaxes=True, vertical_spacing=vertical_spacing,
+    if use_columns is None:
+        columns = data[0].columns
+    else:
+        columns = use_columns
+
+    fig = make_subplots(rows=len(use_columns), cols=1, shared_xaxes=True, vertical_spacing=vertical_spacing,
                         shared_yaxes=sharey)
 
     # select line_shape:
@@ -101,13 +105,15 @@ def plot_data(data, title=None, timestamp=None, discrete=False, height=None, plo
 
     # Add traces
     i = 0
-    columns = data[0].columns
+
     for col_ind in range(len(columns)):
         i += 1
         k = -1
         for d in data:
             col_name = columns[col_ind]
             col = d.columns[col_ind]
+            if use_columns is not None and col_name not in use_columns:
+                continue
 
             hovertemplate = f"<b>Time:</b> %{{x}}<br><b>Event:</b> %{{y}}"
             if customdata is not None:

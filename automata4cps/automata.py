@@ -19,16 +19,17 @@ from dash import html
 import dash_bootstrap_components as dbc
 import pprint
 import warnings
+from reconfig.cps import CPSComponent
 
 
-class Automaton:
+class Automaton (CPSComponent):
     """
     Automaton class is the main class for modeling various kinds of hybrid systems.
 
     """
 
     def __init__(self, states: list = None, events: list = None, transitions: list = None,
-                 unknown_state: str = 'raise'):
+                 unknown_state: str = 'raise', id="", initial_q=()):
         """
         Class initialization from lists of elements.
         :param states: Discrete states / modes of continuous behavior.
@@ -39,7 +40,7 @@ class Automaton:
         :param unknown_state: The name of unknown states during "play in", if "raise", an exception will be raised.
         """
         self._G = nx.MultiDiGraph()
-        self.q0 = OrderedDict()
+        self.q0 = OrderedDict.fromkeys(initial_q)
         self.Sigma = set()
         self.previous_node_positions = None
         self.UNKNOWN_STATE = unknown_state
@@ -56,6 +57,8 @@ class Automaton:
                     self._G.add_edge(tr.pop('source'), tr.pop('dest'), event=tr.pop('event'), **tr)
                 else:
                     self._G.add_edge(tr[0], tr[2], event=tr[1])
+
+        super().__init__(id=id)
 
     @property
     def num_states(self):
@@ -819,9 +822,9 @@ class Automaton:
                 if prev_discr_state is not None and prev_discr_state != discr_state:
                     event = np.asarray(discr_state) - np.asarray(prev_discr_state)
                     event = ' '.join(str(x) for x in event)
-                    data["Event"].iloc[row[0]] = event
+                    data.loc[row[0], "Event"] = event
 
-                data["StateEstimate"].iloc[row[0]] = signal_vector_to_state(discr_state)
+                data.loc[row[0], "StateEstimate"] = signal_vector_to_state(discr_state)
                 prev_discr_state = discr_state
                 prev_time = time
         return data_collection
@@ -829,6 +832,7 @@ class Automaton:
 
 def signal_vector_to_state(sig_vec):
     return pprint.pformat(sig_vec, compact=True)
+
 
 def signal_vector_to_event(previous_vec, sig_vec):
     return

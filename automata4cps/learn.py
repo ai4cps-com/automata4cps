@@ -210,7 +210,8 @@ if __name__ == "__main__":
     from automata4cps.examples import examples
     import tools
 
-    data = examples.high_rack_storage_system_sfowl()
+    discrete_data, time_col, discrete_cols = examples.conveyor_system_sfowl("discrete")
+    data, _, _, cont_vars = examples.conveyor_system_sfowl("all")
 
     discrete_data_changes = tools.remove_timestamps_without_change(discrete_data, sig_names=discrete_cols)
     discrete_data_events = tools.create_events_from_signal_vectors(discrete_data_changes, sig_names=discrete_cols)
@@ -218,11 +219,13 @@ if __name__ == "__main__":
 
 
     ######################## Test simple learn from signals vectors  ###################################################
-
     ta = simple_learn_from_signal_vectors(discrete_data_events, sig_names=discrete_cols)
-    data = ta.predict_state(data, time_col_name="timestamp", discr_col_names=discrete_cols)
 
-    state_sequences = tools.group_data_on_discrete_state(data, state_column="StateEstimate", reset_time=True, time_col="timestamp")
+    data = ta.predict_state(data, time_col_name="timestamp", discr_col_names=discrete_cols)
+    exit()
+
+    state_sequences = tools.group_data_on_discrete_state(data, state_column="StateEstimate", reset_time=True,
+                                                         time_col="timestamp")
     dd = list(state_sequences.values())[4]
     tools.plot_data(dd, timestamp="timestamp", iterate_colors=False).show()
     exit()
