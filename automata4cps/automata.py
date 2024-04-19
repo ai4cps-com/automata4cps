@@ -654,6 +654,65 @@ class Automaton (CPSComponent):
         fig.update_layout(clickmode='event')
         return fig
 
+    def view_graphviz(self, layout="dot", marker_size=20, node_positions=None, show_events=True, show_num_occur=False,
+                    show_state_label=True, font_size=10, plot_self_transitions=True, use_previos_node_positions=False,
+                    **kwargs):
+        graph = None
+        if node_positions is None:
+            if use_previos_node_positions:
+                node_positions = self.previous_node_positions
+            else:
+                g = self._G
+                graph = pdp.graph_from_edges([('"' + tr[0] + '"', '"' + tr[1] + '"') for tr in g.edges], directed=True)
+                for nnn in g.nodes:
+                    graph.add_node(pdp.Node(nnn, shape='point'))
+                graph.set_prog('dot')
+                graph = graph.create(format="dot")
+                graph = pdp.graph_from_dot_data(graph)
+                node_positions = {n.get_name().strip('"'): tuple(float(x) for x in n.get_pos()[1:-1].split(','))
+                                  for n in graph.get_nodes() if
+                                  n.get_name().strip('"') not in ['\\r\\n', 'node', 'graph']}
+            self.previous_node_positions = node_positions
+        node_x = []
+        node_y = []
+        for node in self._G.nodes:
+            x, y = node_positions[node]
+            node_x.append(x)
+            node_y.append(y)
+        texts = []
+        for v in self._G.nodes:
+            try:
+                texts.append(self.print_state(v))
+            except:
+                texts.append('Error printing state: ')
+
+        annotations = [dict(ax=node_positions[tr[0]][0], ay=node_positions[tr[0]][1], axref='x', ayref='y',
+                            x=node_positions[tr[1]][0], y=node_positions[tr[1]][1], xref='x', yref='y',
+                            showarrow=True, arrowhead=1, arrowsize=2) for tr in self._G.edges]
+        def fun(tr):
+            if show_events and show_num_occur:
+                return '<i>{} ({})</i>'.format(tr[2], self.num_occur(tr[0], tr[2]))
+            elif show_events:
+                return '<i>{}</i>'.format(tr[2])
+            elif show_num_occur:
+                return '<i>{}</i>'.format(self.num_occur(tr[0], tr[2]))
+
+        if show_num_occur or show_events:
+            annotations_text = [dict(x=(0.4 * node_positions[tr[0]][0] + 0.6 * node_positions[tr[1]][0]),
+                                     y=(0.4 * node_positions[tr[0]][1] + 0.6 * node_positions[tr[1]][1]),
+                                     xref='x', yref='y', text=fun(tr), font=dict(size=font_size, color='darkblue'),
+                                     yshift=0, showarrow=False)
+                                for tr in self.get_transitions() if plot_self_transitions or tr[0] != tr[1]]
+
+            annotations += annotations_text
+
+        graph = pdp.Dot(graph_type='digraph')
+        for tr in self._G.edges:
+            graph.add_edge(pdp.Edge('"' + tr[0] + '"', '"' + tr[1] + '"', label=tr[2]))
+        for nnn in self._G.nodes:
+            graph.add_node(pdp.Node(nnn, shape='box'))
+        return graph
+
     def plot_transition(self, s, d):
         trans = self.get_transition(s, d)
         titles = '{0} -> {1} -> {2}'.format(trans[0], trans[2], trans[1])
@@ -836,4 +895,3 @@ def signal_vector_to_state(sig_vec):
 
 def signal_vector_to_event(previous_vec, sig_vec):
     return
-
