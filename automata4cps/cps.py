@@ -375,6 +375,7 @@ def group_components(comp, *states):
     else:
         return tuple(res)
 
+
 def flatten_dict_data(stateflow, reduce_keys_if_possible=True):
     d = pd.json_normalize(stateflow).to_dict('records')[0]
     if reduce_keys_if_possible:
