@@ -3,6 +3,8 @@ from plotly import graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
 from plotly import colors as clr
+from sklearn.metrics import precision_score, confusion_matrix
+import torch
 
 
 def remove_timestamps_without_change(data, sig_names):
@@ -54,7 +56,43 @@ def split_data_on_signal_value(data, sig_name, new_value):
     return new_data
 
 
-def plot_data(data, title=None, timestamp=None, use_columns=None, discrete=False, height=None, plotStates=False, limit_num_points=None,
+def split_test_valid(time, data, states, split):
+    # if lists are passed than returns lists, otherwise numpy arrays
+
+    if type(data) is list:
+        split_ind = int(split * len(data))
+
+        train_time = time[:split_ind]
+        valid_time = time[split_ind:]
+
+        train_data = data[:split_ind]
+        valid_data = data[split_ind:]
+
+        train_states = states[:split_ind]
+        valid_states = states[split_ind:]
+    else:
+        split_ind = int(split * data.size(dim=0))
+
+        train_time = time[:split_ind]
+        valid_time = time[split_ind:]
+
+        train_data = data[:split_ind, :]
+        valid_data = data[split_ind:, :]
+
+        train_states = states.iloc[:split_ind, :].to_numpy()
+        valid_states = states.iloc[split_ind:, :].to_numpy()
+
+    return train_time, valid_time, train_data, valid_data, train_states, valid_states
+
+
+def filter_na_and_constant(data):
+    for i in range(len(data)):
+        data[i] = data[i][:,
+                  ~torch.any(data[i].isnan() | data[i].isinf(), dim=0).cpu() & (data[i].std(dim=0) != 0).cpu()]
+    return data
+
+def plot_data(data, title=None, timestamp=None, use_columns=None, discrete=False, height=None, plotStates=False,
+              limit_num_points=None, names=None, xaxis_title=None,
               customdata=None, iterate_colors=True, y_title_font_size=14, opacity=1, vertical_spacing=0.005,
               sharey=False, bounds=None, plot_only_changes=False, yAxisLabelOffset=False, marker_size=4,
               showlegend=False, mode='lines+markers', **kwargs):
@@ -87,14 +125,14 @@ def plot_data(data, title=None, timestamp=None, use_columns=None, discrete=False
                 data[i] = data[i].set_index(timestamp)
 
     if height is None:
-        height = len(data[0].columns) * 60
+        height = max(800, len(data[0].columns) * 60)
 
     if use_columns is None:
         columns = data[0].columns
     else:
         columns = use_columns
 
-    fig = make_subplots(rows=len(use_columns), cols=1, shared_xaxes=True, vertical_spacing=vertical_spacing,
+    fig = make_subplots(rows=len(columns), cols=1, shared_xaxes=True, vertical_spacing=vertical_spacing,
                         shared_yaxes=sharey)
 
     # select line_shape:
@@ -109,9 +147,13 @@ def plot_data(data, title=None, timestamp=None, use_columns=None, discrete=False
     for col_ind in range(len(columns)):
         i += 1
         k = -1
-        for d in data:
+        for trace_ind, d in enumerate(data):
             col_name = columns[col_ind]
             col = d.columns[col_ind]
+            if names:
+                trace_name = names[trace_ind]
+            else:
+                trace_name = str(trace_ind)
             if use_columns is not None and col_name not in use_columns:
                 continue
 
@@ -153,14 +195,13 @@ def plot_data(data, title=None, timestamp=None, use_columns=None, discrete=False
                         customdata = customdata[0:ind]
 
                 fig.add_trace(go.Scatter(x=t, y=sig, mode='markers',
-                                         name=str(col), marker=dict(line_color=color, color=color,
+                                         name=trace_name, marker=dict(line_color=color, color=color,
                                                                     line_width=2, size=marker_size),
                                          customdata=customdata,
                                          hovertemplate=hovertemplate, **kwargs), row=i, col=1)
             else:
                 ind = min(limit_num_points, d.shape[0])
-                fig.add_trace(go.Scatter(x=t[0:ind], y=sig[0:ind], mode=mode,
-                                         name=str(col), customdata=customdata,
+                fig.add_trace(go.Scatter(x=t[0:ind], y=sig[0:ind], mode=mode, name=trace_name, customdata=customdata,
                                          line=dict(color=color), line_shape=lineShape, **kwargs), row=i, col=1)
             fig.update_yaxes(title_text=str(col_name), row=i, col=1, title_font=dict(size=y_title_font_size),
                              categoryorder='category ascending')
@@ -168,6 +209,8 @@ def plot_data(data, title=None, timestamp=None, use_columns=None, discrete=False
             fig.update_yaxes(side="right", row=i, col=1)
         if yAxisLabelOffset == True:
             fig.update_yaxes(title_standoff=10 * i, row=i, col=1)
+        if xaxis_title is not None:
+            fig.update_xaxes(title=xaxis_title)
         if bounds is not None:
             upper_col = bounds[0].iloc[:, col_ind]
             lower_vol = bounds[1].iloc[:, col_ind]
@@ -178,8 +221,7 @@ def plot_data(data, title=None, timestamp=None, use_columns=None, discrete=False
                 mode='lines',
                 marker=dict(color="#444"),
                 line=dict(width=0),
-                showlegend=False
-            )
+                showlegend=False)
             lower_bound = go.Scatter(
                 name='Lower Bound',
                 x=bounds[1].index.get_level_values(-1),
@@ -189,13 +231,50 @@ def plot_data(data, title=None, timestamp=None, use_columns=None, discrete=False
                 mode='lines',
                 fillcolor='rgba(68, 68, 68, 0.3)',
                 fill='tonexty',
-                showlegend=False
-            )
+                showlegend=False)
             fig.add_trace(upper_bound, row=i, col=1)
             fig.add_trace(lower_bound, row=i, col=1)
-    fig.update_layout(title={'text': title, 'x': 0.5},
-                      autosize=True, height=height + 180, showlegend=showlegend)
+    fig.update_layout(title={'text': title, 'x': 0.5}, autosize=True, height=height + 180, showlegend=showlegend)
     return fig
+
+
+def compute_purity(cluster_assignments, class_assignments):
+    num_samples = len(cluster_assignments)
+    valid_values = np.asarray(pd.notna(cluster_assignments) & pd.notna(class_assignments))
+    cluster_assignments = cluster_assignments[valid_values]
+    class_assignments = class_assignments[valid_values]
+    # cluster_class_counts = confusion_matrix(class_assignments[valid_values], cluster_assignments[valid_values])
+
+    cluster_class_counts = {cluster_: {class_: 0 for class_ in np.unique(class_assignments)}
+                            for cluster_ in np.unique(cluster_assignments)}
+
+    for cluster_, class_ in zip(cluster_assignments, class_assignments):
+        cluster_class_counts[cluster_][class_] += 1
+
+    total_intersection = sum([max(class_dict.values()) for cluster_, class_dict in cluster_class_counts.items()])
+
+    purity = total_intersection / num_samples
+
+    return purity
+
+
+def composite_f1_score(anom_labels, start_event_idx, true_anom_idx):
+    true_anomalies = np.array(true_anom_idx) != 0
+    pred_anomalies = np.array(anom_labels) != 0
+    # True Positives (TP): True anomalies correctly predicted as anomalies
+    tp = np.sum([pred_anomalies[start_event_idx:].any()])
+    # False Negatives (FN): True anomalies missed by the prediction
+    fn = 1 - tp
+    # Recall for events (Rec_e): Proportion of true anomalies correctly identified
+    rec_e = tp / (tp + fn) if (tp + fn) > 0 else 0
+    # Precision for the entire time series (Prec_t)
+    prec_t = precision_score(true_anomalies, pred_anomalies)
+    # Composite F-score
+    if prec_t == 0 and rec_e == 0:
+        fscore_c = 0
+    else:
+        fscore_c = 2 * rec_e * prec_t / (rec_e + prec_t)
+    return fscore_c
 
 
 if __name__ == "__main__":
