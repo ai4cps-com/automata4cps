@@ -55,13 +55,15 @@ def simple_learn_from_event_logs(data, initial=True, verbose=False):
     return a
 
 
-def simple_learn_from_signal_vectors(data, sig_names, verbose=False):
+def simple_learn_from_signal_vectors(data, sig_names, drop_no_changes=False, verbose=False):
     a = Automaton()
     sequence = 0
     if verbose:
         print('***Timed automaton learning from variable changes***')
 
     for d in data:
+        if drop_no_changes:
+            d = d.loc[(d.iloc[:, 1:].diff() != 0).any(axis=1), :]
         time_col = d.columns[0]
         sequence += 1
         print('Sequence #{}'.format(sequence))
@@ -70,17 +72,15 @@ def simple_learn_from_signal_vectors(data, sig_names, verbose=False):
             continue
         print('Duration: {}'.format(d[time_col].iloc[-1] - d[time_col].iloc[0]))
 
-
         previous_state = d[sig_names].iloc[:-1]
         dest_state = d[sig_names].iloc[1:]
         event = d[sig_names].diff().apply(lambda x: ' '.join(x.astype(str)).replace(".0", ""), 1).iloc[1:]
         deltat = d[time_col].diff().iloc[1:]
 
-
         for source, dest, ev, dt in zip(previous_state.itertuples(index=False, name=None),
                                         dest_state.itertuples(index=False, name=None), event, deltat):
-            source = pprint.pformat(source, compact=True)
-            dest = pprint.pformat(dest, compact=True)
+            source = pprint.pformat(source, compact=True).replace(".0", "")
+            dest = pprint.pformat(dest, compact=True).replace(".0", "")
             a.add_single_transition(source, dest, ev, dt)
     return a
 
