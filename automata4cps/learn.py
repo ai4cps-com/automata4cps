@@ -141,7 +141,7 @@ def build_pta(data, boundaries=1):
             #     event = event + "'" * sub_event
             dest = pta.get_transition(curr_stat, e=event)
             if dest is None:
-                dest = f"q{pta.num_states}"
+                dest = f"q{pta.num_modes}"
             else:
                 dest = dest[1]
             pta.add_single_transition(curr_stat, dest, event, timing=dt)

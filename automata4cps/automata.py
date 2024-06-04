@@ -19,7 +19,7 @@ from dash import html
 import dash_bootstrap_components as dbc
 import pprint
 import warnings
-from reconfig.cps import CPSComponent
+from automata4cps.cps import CPSComponent
 
 
 class Automaton (CPSComponent):
@@ -58,12 +58,12 @@ class Automaton (CPSComponent):
                 else:
                     self._G.add_edge(tr[0], tr[2], event=tr[1])
 
-        super().__init__(id=id)
+        CPSComponent.__init__(self, id)
 
     @property
-    def num_states(self):
+    def num_modes(self):
         """
-        Returns the number of states in the automaton.
+        Returns the number of modes in the automaton.
         :return: number of states.
         """
         return self._G.number_of_nodes()
@@ -418,7 +418,7 @@ class Automaton (CPSComponent):
         :return:
         """
         return f"""Automaton:
-    Number of states: {self.num_states}
+    Number of states: {self.num_modes}
     Number of transitions: {self.num_transitions}"""
 
     def flow(self, q, p, x, u):

@@ -56,8 +56,10 @@ def split_data_on_signal_value(data, sig_name, new_value):
     return new_data
 
 
-def split_test_valid(time, data, states, split):
+def split_train_valid(time, data, other, split):
     # if lists are passed than returns lists, otherwise numpy arrays
+    train_other = None
+    valid_other = None
 
     if type(data) is list:
         split_ind = int(split * len(data))
@@ -68,8 +70,9 @@ def split_test_valid(time, data, states, split):
         train_data = data[:split_ind]
         valid_data = data[split_ind:]
 
-        train_states = states[:split_ind]
-        valid_states = states[split_ind:]
+        if other is not None:
+            train_other = other[:split_ind]
+            valid_other = other[split_ind:]
     else:
         split_ind = int(split * data.size(dim=0))
 
@@ -79,10 +82,11 @@ def split_test_valid(time, data, states, split):
         train_data = data[:split_ind, :]
         valid_data = data[split_ind:, :]
 
-        train_states = states.iloc[:split_ind, :].to_numpy()
-        valid_states = states.iloc[split_ind:, :].to_numpy()
+        if other is not None:
+            train_other = other.iloc[:split_ind, :].to_numpy()
+            valid_other = other.iloc[split_ind:, :].to_numpy()
 
-    return train_time, valid_time, train_data, valid_data, train_states, valid_states
+    return train_time, valid_time, train_data, valid_data, train_other, valid_other
 
 
 def filter_na_and_constant(data):

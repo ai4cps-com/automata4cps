@@ -23,37 +23,37 @@ import mlflow
 
 
 class DENTA(nn.Module, automata.Automaton):
-    def __init__(self, num_signals, num_hidden, first_hidden_size=None, sigma=1., sigma_learnable=False,
+    def __init__(self, num_signals, num_hidden_units, first_hidden_size=None, sigma=1., sigma_learnable=False,
                  sparsity_weight=0.01, persistence=True, num_hidden_layers=1,
-                 window_size=1, window_step=1, sparsity_target=0.1, use_derivatives=0, device='cpu'):
+                 window_size=1, window_step=1, sparsity_target=0.1, use_derivatives=0, device='cpu', log_mlflow=False):
         super(DENTA, self).__init__()
         self.variant = 'gbrbm'
         self.sparsity_weight = sparsity_weight
         self.sparsity_target = sparsity_target
         self.persistence = persistence
-        self.use_derivatives = np.asarray(use_derivatives)
+        self.use_derivatives = np.asarray(use_derivatives).reshape(-1).tolist()
         self.window_size = window_size
         self.window_step = window_step
-        self.first_hidden_size = first_hidden_size
         self.device = device
-
         self._mean = None
         self._std = None
 
+        self.log_mlflow = log_mlflow
+
         if use_derivatives:
-            num_sig = num_signals * len(self.use_derivatives)
+            input_size = num_signals * len(self.use_derivatives)
         else:
-            num_sig = num_signals
+            input_size = num_signals
 
         if sigma_learnable:
             self.is_sigma_learnable = True
-            self.log_sigma_x = nn.Parameter(np.log(sigma) * torch.ones(1, num_sig, requires_grad=True)).to(device)
+            self.log_sigma_x = nn.Parameter(np.log(sigma) * torch.ones(1, input_size, requires_grad=True)).to(device)
         else:
             self.is_sigma_learnable = False
-            self.log_sigma_x = np.log(sigma) * torch.ones(1, num_sig, requires_grad=False).to(device)
+            self.log_sigma_x = np.log(sigma) * torch.ones(1, input_size, requires_grad=False).to(device)
 
         if self.window_size > 1:
-            num_sig = num_sig * self.window_size
+            input_size = input_size * self.window_size
 
         self._encoder = nn.Sequential().to(device)
         self._decoder = nn.Sequential().to(device)
@@ -71,12 +71,12 @@ class DENTA(nn.Module, automata.Automaton):
         enc_layers = []
         if first_hidden_size is None:
             if num_hidden_layers == 1:
-                first_hidden_size = num_hidden
+                first_hidden_size = num_hidden_units
             else:
-                first_hidden_size = num_sig
+                first_hidden_size = int(input_size * 1.5)
 
-        layer_sizes = ([num_sig] +
-                       np.round(np.linspace(first_hidden_size, num_hidden, num_hidden_layers)).astype(int).tolist())
+        layer_sizes = ([input_size] +
+                       np.round(np.linspace(first_hidden_size, num_hidden_units, num_hidden_layers)).astype(int).tolist())
         for i in range(num_hidden_layers):
             enc_layers.append(nn.Linear(layer_sizes[i], layer_sizes[i+1], device=device))
             self._encoder.add_module(f'linear_v2h{i}', enc_layers[i])
@@ -102,66 +102,107 @@ class DENTA(nn.Module, automata.Automaton):
         self.valid_curve = []
         self.num_epoch = 0
 
-    def encode(self, x):
-        sigma_x = torch.exp(self.log_sigma_x)
-        if x.dim() == 3:
-            sigma_x = sigma_x.unsqueeze(2)
-        x = torch.div(x, sigma_x)
-        x = x.reshape(x.size(0), -1)
-        h = self._encoder(x)
-        return h
+        if log_mlflow:
+            mlflow.log_param("model", "denta")
+            mlflow.log_param("num_signals", num_signals)
+            mlflow.log_param("input_size", input_size)
+            mlflow.log_param("num_hidden_layers", num_hidden_layers)
+            mlflow.log_param("num_hidden_units", num_hidden_units)
+            mlflow.log_param("sparsity_target", self.sparsity_target)
+            mlflow.log_param("sparsity_weight", self.sparsity_weight)
+            mlflow.log_param("sigma", sigma)
+            mlflow.log_param("use_derivatives", self.use_derivatives)
+            mlflow.log_param("window_size", self.window_size)
+            mlflow.log_param("first_hidden_size", first_hidden_size)
 
-    def prepare_data(self, x):
-        x = self.extend_derivative(x)
-        x = self.window(x)
+    def encode(self, x, rounding=False, x_level=0, h_level=None):
+        if h_level is None:
+            h_level = self.num_hidden_layers()
+        if type(x) is list:
+            return [self.encode(xx, rounding=rounding) for xx in x]
+        else:
+            sigma_x = torch.exp(self.log_sigma_x)
+            if x.dim() == 3:
+                sigma_x = sigma_x.unsqueeze(2)
+            x = torch.div(x, sigma_x)
+            x = x.reshape(x.size(0), -1)
+            h = self._encoder(x)
+            if rounding:
+                h = torch.round(h)
+            return h
+
+    def prepare_data(self, x, update_mean_std=False):
+        x = self._extend_derivative(x)
+        x = self._standardize(x, fit=update_mean_std)
+        x = self._window(x)
         return x
 
-    def window(self, x):
-        windows = x.unfold(dimension=0, size=self.window_size, step=self.window_step)
-        return windows
+    def _standardize(self, x, fit=False):
+        if type(x) is list:
+            if fit:
+                all_x = torch.vstack(x)
+                self._mean = all_x.mean(dim=0)
+                self._std = all_x.std(dim=0)
 
-    def extend_derivative(self, signals, update_mean_std=False):
-        new_signals = [signals]
-        for ord in range(0, max(self.use_derivatives)):
-            # Initialize a tensor to hold the derivatives, same shape as the input
-            derivatives = torch.zeros_like(signals)
+            return [(xx - self._mean) / self._std for xx in x]
+        else:
+            if fit:
+                self._mean = x.mean(dim=0)
+                self._std = x.std(dim=0)
+            return (x - self._mean) / self._std
 
-            # Use central differences for the interior points
-            derivatives[1:-1, :] = (signals[2:, :] - signals[:-2, :]) / 2
+    def _window(self, x):
+        if type(x) is list:
+            return [self._window(xx) for xx in x]
+        else:
+            return x.unfold(dimension=0, size=self.window_size, step=self.window_step)
 
-            # Use forward difference for the first point
-            derivatives[0, :] = signals[1, :] - signals[0, :]
+    def _extend_derivative(self, signals):
+        if type(signals) is list:
+            return [self._extend_derivative(x) for x in signals]
+        else:
+            new_signals = [signals]
+            for ord in range(0, max(self.use_derivatives)):
+                # Initialize a tensor to hold the derivatives, same shape as the input
+                derivatives = torch.zeros_like(signals)
 
-            # Use backward difference for the last point
-            derivatives[-1, :] = signals[-1, :] - signals[-2, :]
+                # Use central differences for the interior points
+                derivatives[1:-1, :] = (signals[2:, :] - signals[:-2, :]) / 2
 
-            new_signals.append(derivatives)
-            signals = derivatives
+                # Use forward difference for the first point
+                derivatives[0, :] = signals[1, :] - signals[0, :]
 
-        new_signals = [new_signals[i] for i in self.use_derivatives]
-        new_signals = torch.hstack(new_signals)
+                # Use backward difference for the last point
+                derivatives[-1, :] = signals[-1, :] - signals[-2, :]
 
-        if update_mean_std:
-            self._mean = new_signals.mean(dim=0)
-            self._std = new_signals.std(dim=0)
+                new_signals.append(derivatives)
+                signals = derivatives
 
-        new_signals = (new_signals - self._mean) / self._std
+            new_signals = [new_signals[i] for i in self.use_derivatives]
+            new_signals = torch.hstack(new_signals)
         return new_signals
 
+    def predict_discrete_mode(self, data, prepare_data=True):
+        if type(data) is list:
+            return [self.predict_discrete_mode(d) for d in data]
+        else:
+            if prepare_data:
+                data = self.prepare_data(data)
+            h = self.encode(data, rounding=True)
+            h = self.binary_vector_to_mode(h)
+            return np.concatenate([np.full((self.window_size-1,), np.nan), h], axis=0)
 
-    def predict_discrete_mode(self, data):
-        h = [torch.round(self.encode(self.prepare_data(d))) for d in data]
-        h = [self.bin_vec_to_mode(d) for d in h]
-        h = [pd.concat([pd.Series(None, index=range(self.window_size-1)), hh]).to_numpy() for hh in h]
-        return h# df_nan = pd.DataFrame(np.nan, index=range(rows), columns=range(cols))
+    def binary_vector_to_mode(self, h):
+        if type(h) is list:
+            return [self.binary_vector_to_mode(x) for x in h]
+        else:
+            df = pd.DataFrame(h.cpu().detach().numpy())
+            df = df.astype(int).astype(str)
+            return df.agg(''.join, axis=1).to_numpy()
 
-    def bin_vec_to_mode(self, h):
-        df = pd.DataFrame(h.cpu().detach().numpy())
-        df = df.astype(int).astype(str)
-        x = df.agg(''.join, axis=1)
-        return x
-
-    def decode(self, h):
+    def decode(self, h, x_level=0, h_level=None):
+        if h_level is None:
+            h_level = self.num_hidden_layers()
         y = self._decoder(h)
         y = y.reshape(y.size(0), -1, self.window_size)
         sigma_x = torch.exp(self.log_sigma_x)
@@ -171,8 +212,7 @@ class DENTA(nn.Module, automata.Automaton):
         return y
 
     def forward(self, x):
-        x = self.extend_derivative(x)
-        x = self.window(x)
+        x = self.prepare_data(x)
         return self.decode(self.encode(x))
 
     def energy(self, x, h):
@@ -181,8 +221,9 @@ class DENTA(nn.Module, automata.Automaton):
         xWh = torch.sum(torch.matmul(x, self._encoder[-2].weight.T) * h, dim=1)
         return vis - hid - xWh
 
-    def free_energy(self, x):
-        vis = torch.sum(torch.div(torch.square(x - self.bx), (2 * torch.square(torch.exp(self.log_sigma_x)))), dim=1)
+    def free_energy(self, x, level=1):
+        bx = self._decoder[-level][f"linear_h2v{level}"]
+        vis = torch.sum(torch.div(torch.square(x - bx), (2 * torch.square(torch.exp(self.log_sigma_x)))), dim=1)
         x = torch.div(x, torch.exp(self.log_sigma_x))
         return vis - torch.sum(self.free_energy_components(x), dim=1)
 
@@ -224,6 +265,9 @@ class DENTA(nn.Module, automata.Automaton):
         l = self._decoder[0]
         return l.in_features
 
+    def num_hidden_layers(self):
+        return len(self._encoder)
+
     # def sample_h(self, x):
     #     p_h_given_v = self.encode(x)
     #     return p_h_given_v, torch.bernoulli(p_h_given_v)
@@ -248,123 +292,112 @@ class DENTA(nn.Module, automata.Automaton):
         sparsity_penalty = self.sparsity_weight * torch.sum((self.sparsity_target - hk) ** 2)
         return self.energy(v0, h0) - self.energy(vk, hk) + sparsity_penalty
 
-    def recon(self, v, round=False):
+    def recon(self, v, round=False, x_level=0, h_level=None):
         # if self.variant == 'dsebm':
         #     v = v.requires_grad_()
         #     logp = -self.free_energy_components(v).sum()
         #     return torch.autograd.grad(logp, v, create_graph=True)[0]
-        h = self.encode(v)
+        if h_level is None:
+            h_level = self.num_hidden_layers()
+        h = self.encode(v, x_level=x_level, h_level=h_level)
         if round:
             h = torch.round(h)
-        r = self.decode(h)
+        r = self.decode(h, x_level, h_level)
         return r, h
 
-    # def pretrain_denta_network(self, train_data, valid_data, learning_rule='re', max_epoch=10, min_epoch=0,
-    #                         weight_decay=0., batch_size=128, shuffle=True, num_k=1, verbose=True, early_stopping=False,
-    #                         early_stopping_patience=3, use_probability_last_x_update=False):
-    #
-    #     train_data = [self.window(self.extend_derivative(d, update_mean_std=True)) for d in train_data]
-    #     valid_data = [self.window(self.extend_derivative(d)) for d in valid_data]
-    #
-    #     train_data = torch.vstack(train_data)
-    #     valid_data = torch.vstack(valid_data)
-    #
-    #     if valid_data is not None:
-    #         # valid = round(valid * len(train_data))
-    #         # train_data, valid_data = random_split(train_data, [len(train_data) - valid, valid])
-    #         valid_data = next(iter(DataLoader(valid_data, batch_size=len(valid_data))))
-    #         progress = dict()
-    #         progress['MSE'] = torch.mean(self.recon_error(valid_data)).item()
-    #
-    #         valid_energy = torch.mean(self.free_energy(valid_data)).item()
-    #         progress['Energy'] = valid_energy
-    #         self.valid_curve.append(progress)
-    #
-    #     train_data_loaded = next(iter(DataLoader(train_data, batch_size=len(train_data))))
-    #     progress = dict(MSE=torch.mean(self.recon_error(train_data_loaded)).item())
-    #
-    #     progress['Energy'] = torch.mean(self.free_energy(train_data_loaded)).item()
-    #     self.learning_curve.append(progress)
-    #
-    #     data_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=shuffle)
-    #     opt = torch.optim.RMSprop(self.parameters(), weight_decay=weight_decay)
-    #     t_start = time.time()
-    #     for epoch in range(1, max_epoch + 1):
-    #         for i, d in enumerate(data_loader):
-    #             xk = d
-    #             if self.variant in ['dsebm', 'dae']:
-    #                 xk = torch.normal(mean=xk, std=torch.exp(self.log_sigma_x))
-    #             x0 = d
-    #             if learning_rule == 'cd':
-    #                 with torch.no_grad():
-    #                     eh0 = self.encode(x0)
-    #                     h0 = self.sample_h(eh0)
-    #                     hk = h0
-    #                     for k in range(num_k):
-    #                         exk = self.decode(hk)
-    #                         xk = self.sample_x(exk)
-    #                         ehk = self.encode(xk)
-    #                         hk = self.sample_h(ehk)
-    #
-    #                 if use_probability_last_x_update:
-    #                     cd = torch.mean(self.contrastive_divergence(x0, h0, exk, ehk))
-    #                 else:
-    #                     cd = torch.mean(self.contrastive_divergence(x0, h0, xk, ehk))
-    #                 opt.zero_grad()
-    #                 cd.backward()
-    #                 opt.step()
-    #             elif learning_rule == 'sm':
-    #                 r = self.recon(xk)
-    #                 loss = (r - x0).pow(2).sum()
-    #                 opt.zero_grad()
-    #                 loss.backward()
-    #                 opt.step()
-    #             elif learning_rule == 're':
-    #                 h = self.encode(xk)
-    #                 r = self.decode(h)
-    #                 loss = (r - x0).pow(2).sum() + self.sparsity_loss(h)
-    #                 opt.zero_grad()
-    #                 loss.backward()
-    #                 opt.step()
-    #             elif learning_rule == 'dsm':
-    #                 x0noise = torch.normal(torch.zeros_like(x0))
-    #                 loss = self.dsm_loss(x0, x0noise)
-    #                 opt.zero_grad()
-    #                 loss.backward()
-    #                 opt.step()
-    #
-    #         with torch.no_grad():
-    #             progress = dict(MSE=torch.mean(self.recon_error(train_data_loaded)).item())
-    #
-    #             progress['Energy'] = torch.mean(self.free_energy(train_data_loaded)).item()
-    #         if verbose:
-    #             print(f'\n############### Epoch {epoch} ###############')
-    #             print('Train: ')
-    #             pprint.pp(progress)
-    #         self.learning_curve.append(progress)
-    #         if valid_data is not None:
-    #             with torch.no_grad():
-    #                 progress = dict(MSE=torch.mean(self.recon_error(valid_data)).item())
-    #
-    #                 progress['Energy'] = torch.mean(self.free_energy(valid_data)).item()
-    #
-    #             self.valid_curve.append(progress)
-    #             if verbose:
-    #                 print('Valid: ')
-    #                 pprint.pp(progress)
-    #
-    #             if early_stopping and epoch > min_epoch and epoch > early_stopping_patience:
-    #                 if False:
-    #                     valid_metrics = np.array([v['MSE'] for v in self.valid_curve[-early_stopping_patience-1:]])
-    #                     if np.all(valid_metrics[1:] > valid_metrics[0]):
-    #                         print('Early stop after valid metrics: ', valid_metrics)
-    #                         break
-    #
-    #         if self.is_sigma_learnable:
-    #             print(torch.exp(self.log_sigma_x))
-    #     self.eval()
-    #     self.num_epoch = epoch
-    #     print('Training finished after ', timedelta(seconds=time.time() - t_start))
+    def pretrain_dbn(self, train_data, valid_data, **kwargs):
+        for layer in range(1, self.num_hidden_layers() + 1):
+            self.train_rbm(train_data, valid_data, level=layer, **kwargs)
+
+    def train_rbm(self, train_data, valid_data, level=1, learning_rule='cd', min_epoch=0, max_epoch=10, weight_decay=0.,
+                  batch_size=128, shuffle=True, num_k=1, verbose=True, early_stopping=False, early_stopping_patience=3,
+                  use_probability_last_x_update=False):
+        if self.log_mlflow:
+            mlflow.log_param("min_epoch", min_epoch)
+            mlflow.log_param("max_epoch", max_epoch)
+            mlflow.log_param("batch_size", batch_size)
+            mlflow.log_param("shuffle", shuffle)
+            mlflow.log_param("weight_decay", weight_decay)
+            mlflow.log_param("early_stopping_patience", early_stopping_patience)
+            mlflow.log_param("early_stopping", early_stopping)
+
+        train_data = self.prepare_data(train_data, update_mean_std=level == 1)
+        valid_data = self.prepare_data(valid_data)
+
+        train_data = torch.vstack(train_data)
+        valid_data = torch.vstack(valid_data)
+
+        if valid_data is not None:
+            self.valid_curve.append(self._get_progress_rbm(valid_data, level=level))
+
+        self.learning_curve.append(self._get_progress_rbm(train_data, level=level))
+
+        data_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=shuffle)
+        opt = torch.optim.RMSprop(self.parameters(), weight_decay=weight_decay)
+        t_start = time.time()
+        for epoch in range(1, max_epoch + 1):
+            for i, d in enumerate(data_loader):
+                xk = d
+                if self.variant in ['dsebm', 'dae']:
+                    xk = torch.normal(mean=xk, std=torch.exp(self.log_sigma_x))
+                x0 = d
+                if learning_rule == 'cd':
+                    with torch.no_grad():
+                        eh0 = self.encode(x0)
+                        h0 = self.sample_h(eh0)
+                        hk = h0
+                        for k in range(num_k):
+                            exk = self.decode(hk)
+                            xk = self.sample_x(exk)
+                            ehk = self.encode(xk)
+                            hk = self.sample_h(ehk)
+
+                    if use_probability_last_x_update:
+                        cd = torch.mean(self.contrastive_divergence(x0, h0, exk, ehk))
+                    else:
+                        cd = torch.mean(self.contrastive_divergence(x0, h0, xk, ehk))
+                    opt.zero_grad()
+                    cd.backward()
+                    opt.step()
+                elif learning_rule == 'sm':
+                    r = self.recon(xk)
+                    loss = (r - x0).pow(2).sum()
+                    opt.zero_grad()
+                    loss.backward()
+                    opt.step()
+                elif learning_rule == 'dsm':
+                    x0noise = torch.normal(torch.zeros_like(x0))
+                    loss = self.dsm_loss(x0, x0noise)
+                    opt.zero_grad()
+                    loss.backward()
+                    opt.step()
+
+            with torch.no_grad():
+                progress = self._get_progress_rbm(train_data)
+                if verbose:
+                    print(f'\n############### Epoch {epoch} ###############')
+                    print('Train: ')
+                    pprint.pp(progress)
+                self.learning_curve.append(progress)
+            if valid_data is not None:
+                with torch.no_grad():
+                    progress = self._get_progress_rbm(valid_data)
+                    self.valid_curve.append(progress)
+                if verbose:
+                    print('Valid: ')
+                    pprint.pp(progress)
+
+                if early_stopping and epoch > min_epoch and epoch > early_stopping_patience:
+                    valid_metrics = np.array([v['MSE'] for v in self.valid_curve[-early_stopping_patience - 1:]])
+                    if np.all(valid_metrics[1:] > valid_metrics[0]):
+                        print('Early stop after valid metrics: ', valid_metrics)
+                        break
+
+            if self.is_sigma_learnable:
+                print(torch.exp(self.log_sigma_x))
+        self.eval()
+        self.num_epoch = epoch
+        print('Training finished after ', timedelta(seconds=time.time() - t_start))
 
     def mse(self, x, r, per_point=False):
         if per_point:
@@ -381,22 +414,40 @@ class DENTA(nn.Module, automata.Automaton):
             progress['Energy'] = valid_energy
         return progress
 
+    def _get_progress_rbm(self, d, level):
+        r, h = self.recon(d, x_level=level-1, h_level=level)
+        e = self.free_energy(d)
+        progress = dict(MSE=self.mse(d, r).item(),
+                        Sparsity=self.sparsity(h).item(),
+                        Energy=torch.mean(e).item())
+        return progress
+
+    def _is_set_mean_std(self):
+        return self._std is not None and self._mean is not None
+
     def learn_denta_network(self, train_data, valid_data, max_epoch=10, min_epoch=0,
                             weight_decay=0., batch_size=128, shuffle=True, verbose=True, early_stopping=False,
-                            early_stopping_patience=3, round_latent_during_learning=False, log_mlflow=False):
-        train_data = [self.window(self.extend_derivative(d, update_mean_std=True)) for d in train_data]
-        valid_data = [self.window(self.extend_derivative(d)) for d in valid_data]
+                            early_stopping_patience=3, round_latent_during_learning=False):
+        if self.log_mlflow:
+            mlflow.log_param("min_epoch", min_epoch)
+            mlflow.log_param("max_epoch", max_epoch)
+            mlflow.log_param("batch_size", batch_size)
+            mlflow.log_param("shuffle", shuffle)
+            mlflow.log_param("weight_decay", weight_decay)
+            mlflow.log_param("early_stopping_patience", early_stopping_patience)
+            mlflow.log_param("early_stopping", early_stopping)
+            mlflow.log_param('round_latent_during_learning', round_latent_during_learning)
+
+        train_data = self.prepare_data(train_data, update_mean_std=not self._is_set_mean_std())
+        valid_data = self.prepare_data(valid_data)
 
         train_data = torch.vstack(train_data)
         valid_data = torch.vstack(valid_data)
 
         if valid_data is not None:
-            # valid = round(valid * len(train_data))
-            # train_data, valid_data = random_split(train_data, [len(train_data) - valid, valid])
-            valid_data = next(iter(DataLoader(valid_data, batch_size=len(valid_data))))
             self.valid_curve.append(self._get_progress_learn(valid_data))
 
-        train_data_loaded = next(iter(DataLoader(train_data, batch_size=len(train_data))))
+        train_data_loaded = train_data
         self.learning_curve.append(self._get_progress_learn(train_data_loaded))
 
         data_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=shuffle)
@@ -440,19 +491,23 @@ class DENTA(nn.Module, automata.Automaton):
         self.eval()
         self.num_epoch = epoch
 
-        if log_mlflow:
+        if self.log_mlflow:
             mlflow.log_metrics(self.valid_curve[-1])
-            learn_curve = self.plot_learning_curve()
-            mlflow.log_figure(learn_curve, f'figures/learning_curve_denta_{mlflow.active_run().info.run_id}.html')
+            mlflow.log_metric("num_epoch", self.num_epoch)
+            run_id = mlflow.active_run().info.run_id
+            mlflow.log_figure(self.plot_learning_curve(), f'figures/learning_curve_denta_{run_id}.html')
+            mlflow.log_figure(self.plot_activation_probabilities(valid_data, prepare_data=False),
+                              f'figures/activations_hist_denta_{run_id}.html')
+            mlflow.log_figure(self.plot_frequency_of_latent_combinations(valid_data, prepare_data=False),
+                              f'figures/latent_frequencies_denta_{run_id}.html')
 
         print('Training finished after ', timedelta(seconds=time.time() - t_start))
 
-    def learn_latent_automaton(self, train_data, valid_data, log_mlflow=False):
+    def learn_latent_automaton(self, train_data, valid_data):
         sig_names = [f'h{i + 1}' for i in range(self.num_h())]
         h = []
         for d in train_data:
-            d = self.extend_derivative(d)
-            d = self.window(d)
+            d = self.prepare_data(d)
             hh = torch.round(self.encode(d)).cpu().detach().numpy()
             hh = pd.DataFrame(hh, columns=sig_names, index=np.arange(hh.shape[0]))
             hh.reset_index(inplace=True)
@@ -460,15 +515,13 @@ class DENTA(nn.Module, automata.Automaton):
         a = automata_learn.simple_learn_from_signal_vectors(h, drop_no_changes=True, sig_names=sig_names)
         self._G = a._G
 
-        if log_mlflow:
-            mlflow.log_metric("num_modes", self.num_states)
-            fig_ta = self.view_plotly()
-            mlflow.log_figure(fig_ta, f'figures/denta_automaton_{mlflow.active_run().info.run_id}.html')
+        if self.log_mlflow:
+            mlflow.log_metric("num_modes", self.num_modes)
+            mlflow.log_figure(self.view_plotly(), f'figures/denta_automaton_{mlflow.active_run().info.run_id}.html')
 
     # def sparsity_loss(self, h):
     #     sparsity_penalty = self.sparsity_weight * torch.sum((self.sparsity_target - h) ** 2)
     #     return sparsity_penalty
-
     def sparsity(self, activations, per_point=False):
         if per_point:
             return torch.mean(activations, dim=1)
@@ -513,6 +566,16 @@ class DENTA(nn.Module, automata.Automaton):
     def calculate_ad_threshold(self, d, quantile=0.95):
         scores = self.anomaly_score(d)
         self.threshold = np.sort(scores)[int((len(scores) - 1) * quantile)]
+        if self.log_mlflow:
+            mlflow.log_metric('threshold', self.threshold)
+
+    def plot_activation_probabilities(self, d, prepare_data=True):
+        if prepare_data:
+            d = self.prepare_data(d)
+        h = self.encode(d).cpu().detach().numpy()
+        fig = go.Figure(data=[go.Histogram(x=h.reshape(-1), name="Probability", histnorm="percent", nbinsx=20)],
+                        layout_title="Histogram of activation probabilities")
+        return fig
 
     def plot_error_histogram(self, d, v=None):
         s = self.anomaly_score(d)
@@ -582,6 +645,14 @@ class DENTA(nn.Module, automata.Automaton):
         Z = sum(weights)
         weights = weights / Z
         return weights, means, gmm_sigmas, hid_states, Z
+
+    def plot_frequency_of_latent_combinations(self, d, prepare_data=True):
+        h = self.predict_discrete_mode(d, prepare_data)
+        if type(h) is list:
+            h = np.concatenate(h, axis=0)
+        fig = go.Figure(data=[go.Histogram(x=h, name="Frequency", histnorm="percent")],
+                        layout_title="Frequency of latent combinations")
+        return fig
 
     def plot_discretization(self, time, target, prediction, data=None, data_time=None):
         target = np.asarray(target)
@@ -875,13 +946,16 @@ if __name__ == '__main__':
     num_hidden_layers = 3
 
     # Train model
-    model = DENTA(data.shape[1], latent_dim, num_hidden_layers=num_hidden_layers, sigma=sigma, sigma_learnable=False,
-                        use_derivatives=0, window_size=window_size, window_step=window_step,
-                        sparsity_target=sparsity_target, sparsity_weight=sparsity_weight, device='cuda')
-    model.learn_denta_network([data], [valid], max_epoch=max_epoch, verbose=False)
+    model = DENTA(data.shape[1], latent_dim, sigma=sigma, sigma_learnable=False, sparsity_weight=sparsity_weight,
+                  num_hidden_layers=num_hidden_layers, window_size=window_size, window_step=window_step,
+                  sparsity_target=sparsity_target, use_derivatives=0, device='cuda')
+    model.pretrain_dbn([data], [valid])
+    # model.learn_denta_network([data], [valid], max_epoch=max_epoch, verbose=False)
     model.learn_latent_automaton([data], [valid])
     model.view_plotly().show()
     model.plot_learning_curve().show('browser')
 
     valid_mode_prediction = model.predict_discrete_mode([valid])
-    model.plot_discretization(timestamp, valid_states.cpu(), valid_mode_prediction[0], data.cpu(), timestamp.cpu()).show()
+    # model.plot_frequency_of_latent_combinations([data]).show()
+    model.plot_activation_probabilities(valid).show()
+    #model.plot_discretization(timestamp, valid_states.cpu(), valid_mode_prediction[0], data.cpu(), timestamp.cpu()).show()

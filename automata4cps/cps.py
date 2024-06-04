@@ -211,7 +211,10 @@ class CPSComponent(PythonModel):
         self._discrete_output_data = []
 
     def get_execution_data(self):
-        return {self.id: self._discrete_state_data}
+        data = pd.DataFrame(self._discrete_state_data, columns=['Timestamp', 'Finish', 'State', 'Event'] + list(self._p.keys()))
+        data['Finish'] = data['Timestamp'].shift(-1)
+        data['Duration'] = pd.to_timedelta(data['Finish'] - data['Timestamp']).dt.total_seconds()
+        return data
 
     def discrete_event_dynamics(self, previous_q, e, xt, xk, p) -> tuple:
         """
