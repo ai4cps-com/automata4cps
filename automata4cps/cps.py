@@ -127,6 +127,16 @@ class CPS:
                     return c
         return None
 
+    def get_execution_data(self, flat=False):
+        exe_data = {}
+        if flat:
+            for c in self.get_all_components():
+                exe_data[c.id] = c.get_execution_data()
+        else:
+            for k, c in self.com.items():
+                exe_data[c.id] = c.get_execution_data()
+        return exe_data
+
 
 
 class CPSComponent(PythonModel):
