@@ -1,7 +1,10 @@
+import datetime
+
 from automata4cps import Automaton
 import numpy as np
 import pandas as pd
 import os
+import math
 
 
 def timed_control():
@@ -47,12 +50,37 @@ def simple_conveyor_system():
 
 
 def conveyor_system_sfowl(variable_type="all"):
+    columns_16bit = ['O_w_HAL_Ctrl', 'O_w_HAR_Ctrl']
+
     file_path = os.path.dirname(os.path.abspath(__file__))
     log1 = pd.read_csv(os.path.join(file_path, "data", "log1.csv"))
     log2 = pd.read_csv(os.path.join(file_path, "data", "log2.csv"))
     data = [log1, log2]
-    discrete_cols = [c for c in data[0].columns if c.lower()[-5:] == '_ctrl']
+
     cont_cols = [c for c in data[0].columns if c.lower()[-5:] != '_ctrl' and c != "timestamp"]
+    discrete_cols = [c for c in data[0].columns if '_Ctrl' in c]
+    num_bits = {c: max([math.ceil(math.log2(d[c].max())) for d in data]) for c in discrete_cols}
+
+
+    # reformat timestamp
+    for i, log in enumerate(data):
+        log['timestamp_new'] = (datetime.datetime(1, 1, 1)) + log['timestamp'].apply(lambda x: datetime.timedelta(seconds=x))
+        log['timestamp'] = pd.to_datetime(log['timestamp_new'])
+        log.drop(['timestamp_new'], axis=1, inplace=True)
+
+        for col in discrete_cols:
+            series_16bit = log[col].apply(lambda x: list(format(x, f'{num_bits[col]:03d}b')))
+            binary_df = pd.DataFrame(series_16bit.tolist(), columns=[f'{col}_bit_{i}' for i in range(num_bits[col])]).astype(int)
+            data[i].drop([col], axis=1, inplace=True)
+            data[i] = pd.concat([data[i], binary_df], axis=1)
+
+    discrete_cols = [c for c in data[0].columns if '_Ctrl' in c]
+
+    # remove constant bits
+    constant_cols = [c for c in discrete_cols if 1 == len(set(item for sublist in ([d[c].unique() for d in data]) for item in sublist))]
+    for d in data:
+        d.drop(columns=constant_cols, axis=1, inplace=True)
+    discrete_cols = [d for d in discrete_cols if d not in constant_cols]
 
     if variable_type == "discrete":
         discrete_data = [d[['timestamp'] + discrete_cols] for d in data]
@@ -65,6 +93,9 @@ def conveyor_system_sfowl(variable_type="all"):
 
 
 if __name__ == "__main__":
+
+    data = conveyor_system_sfowl()
+    exit()
     # A = timed_control()
     # A.simulate(finish_time=500)
 
