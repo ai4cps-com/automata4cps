@@ -5,6 +5,8 @@ import numpy as np
 from plotly import colors as clr
 from sklearn.metrics import precision_score, confusion_matrix
 import torch
+from datetime import datetime
+import dash_cytoscape as cyto
 
 
 def remove_timestamps_without_change(data, sig_names):
@@ -94,6 +96,33 @@ def filter_na_and_constant(data):
         data[i] = data[i][:,
                   ~torch.any(data[i].isnan() | data[i].isinf(), dim=0).cpu() & (data[i].std(dim=0) != 0).cpu()]
     return data
+
+
+def melt_dataframe(df, timestamp=None):
+    if timestamp is None:
+        timestamp = df.columns[0]
+
+    # Set timestamp as the index
+    df = df.set_index(timestamp)
+
+    # Initialize an empty list to store the changes
+    changes = []
+
+    # Iterate through columns and detect changes
+    for col in df.columns:
+        # Get the boolean series where the current value is different from the previous value
+        diff = df[col].ne(df[col].shift())
+        # Collect the changes in a DataFrame
+        changes_col = df.loc[diff, [col]].reset_index()
+        changes_col['variable'] = col
+        changes_col = changes_col.rename(columns={col: 'value'})
+        changes.append(changes_col)
+
+    # Concatenate all changes
+    result = pd.concat(changes).sort_values(by=[timestamp, 'variable']).reset_index(drop=True)
+
+    return result
+
 
 def plot_data(data, title=None, timestamp=None, use_columns=None, discrete=False, height=None, plotStates=False,
               limit_num_points=None, names=None, xaxis_title=None,
@@ -242,6 +271,97 @@ def plot_data(data, title=None, timestamp=None, use_columns=None, discrete=False
     return fig
 
 
+def plot_execution_tree(graph, nodes_to_color, color, font_size=30):
+    # The function plots system execution in form of a graph, where horizontal position of the nodes corresponds to the
+    # node's timestamp. The tree branches vertically.
+
+    # for ntd in nodes_to_delete:
+    #     if ntd in graph:
+    #         prenodes = list(graph.predecessors(ntd))
+    #         sucnodes = list(graph.successors(ntd))
+    #         preedges = list(graph.in_edges(ntd))
+    #         sucedges = list(graph.out_edges(ntd))
+    #         edgestodelete = preedges + sucedges
+    #         if ((len(preedges) > 0) and (len(sucedges) > 0)):
+    #             for prenode in prenodes:
+    #                 for sucnode in sucnodes:
+    #                     graph.add_edge(prenode, sucnode)
+    #         if (len(edgestodelete) > 0):
+    #             graph.remove_edges_from(edgestodelete)
+
+    startstring = list(graph.nodes)[0]
+    arr_elements = []
+    num_of_nodes = graph.number_of_nodes()
+    # vertical_height = num_of_states
+    visited = set()
+    stack = [startstring]
+    while stack:
+        node = stack.pop()
+        if node not in visited:
+            elemid = str(node)
+            elemlabel = graph.nodes[node].get('label')
+            datepos1 = datetime.strptime(startstring, "%d/%m/%Y, %H:%M:%S")
+            datepos2 = datetime.strptime(node, "%d/%m/%Y, %H:%M:%S")
+            nodeweight = graph.nodes[node].get('weight')
+            ypos = 0
+            if nodeweight == 0:
+                ypos = num_of_states * 100
+            else:
+                ypos = (nodeweight - 1) * 200
+            element = {
+                'data': {
+                    'id': elemid,
+                    'label': elemlabel
+                },
+                'position': {
+                    'x': (datepos2 - datepos1).total_seconds() / 7200,
+                    'y': ypos
+                },
+                # 'locked': True
+            }
+            arr_elements.append(element)
+            visited.add(node)
+            stack.extend(neighbor for neighbor in graph.successors(node) if neighbor not in visited)
+    for u, v in list(graph.edges):
+        edge_element = {
+            'data': {
+                'source': u,
+                'target': v
+            }
+        }
+        arr_elements.append(edge_element)
+
+
+    colorcode = ['gray'] * num_of_nodes
+    for n in nodes_to_color:
+        if n in graph:
+            n_ind = list(graph.nodes).index(n)
+            if (n_ind < num_of_nodes):
+                colorcode[n_ind] = color
+    new_stylesheet = []
+    for i in range(0, num_of_nodes):
+        new_stylesheet.append({
+            'selector': f'node[id = "{list(graph.nodes)[i]}"]',
+            'style': {
+                'font-size': f'{font_size}px',
+                'content': 'data(label)',
+                'background-color': colorcode[i],
+                'text-valign': 'top',
+                'text-halign': 'center',
+                # 'animate': True
+            }
+        })
+
+    cytoscapeobj = cyto.Cytoscape(
+        id='org-chart',
+        layout={'name': 'preset'},
+        style={'width': '2400px', 'height': '1200px'},
+        elements=arr_elements,
+        stylesheet=new_stylesheet
+    )
+    return cytoscapeobj
+
+
 def compute_purity(cluster_assignments, class_assignments):
     num_samples = len(cluster_assignments)
     valid_values = np.asarray(pd.notna(cluster_assignments) & pd.notna(class_assignments))
@@ -279,6 +399,61 @@ def composite_f1_score(anom_labels, start_event_idx, true_anom_idx):
     else:
         fscore_c = 2 * rec_e * prec_t / (rec_e + prec_t)
     return fscore_c
+
+
+def binary_ordinal_encode(column, order):
+    """
+    Encodes a pandas Series with binary ordinal encoding based on the specified order.
+
+    Args:
+        column (pd.Series): The column to encode.
+        order (list): The ordered list of unique values in the column.
+
+    Returns:
+        pd.DataFrame: The binary ordinal encoded DataFrame for the given column.
+    """
+    num_levels = len(order)
+    num_bits = num_levels.bit_length()
+
+    # Create a dictionary mapping each level to its binary representation
+    encoding_map = {value: list(map(int, format(i, f'0{num_bits}b'))) for i, value in enumerate(order)}
+
+    # Apply the encoding to the column
+    encoded_df = pd.DataFrame(column.map(encoding_map).tolist(),
+                              columns=[f"{column.name}_bit_{i}" for i in range(num_bits)])
+
+    return encoded_df
+
+def encode_ordinal(x, columns, order=None):
+    if columns is None:
+        columns = x.columns
+    if len(columns) == 1 and type(order) is not dict:
+        order = {columns[0]: order}
+    new_data = []
+    for c in columns:
+        new_data.append(binary_ordinal_encode(x[c], order[c]))
+
+    # Concatenate the encoded columns with the original DataFrame (excluding the original ordinal columns)
+    return pd.concat([x.drop(columns, axis=1)] + new_data, axis=1)
+
+def encode_nominal(x, columns=None, categories=None):
+    if columns is None:
+        columns = x.columns
+    if categories is None:
+        categories = dict()
+    for c in columns:
+        x[c] = pd.Categorical(x[c], categories=categories.get(c, None))
+    return pd.get_dummies(x, columns=columns, dtype=float)
+
+
+def encode_nominal_list_df(dfs, columns=None, categories=None):
+    if columns is None:
+        columns = list(pd.concat(dfs.columns).unique())
+    if categories is None:
+        categories = dict.fromkeys(columns)
+        for c in columns:
+            categories[c] = np.sort(list(np.unique(np.concatenate([df[c].unique() for df in dfs]))))
+    return [encode_nominal(x, columns, categories=categories) for x in dfs]
 
 
 if __name__ == "__main__":
