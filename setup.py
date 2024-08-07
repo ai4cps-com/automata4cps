@@ -6,7 +6,8 @@ setup(
     packages=find_packages(),
     install_requires=[
         # List your project's dependencies here, for example:
-        'dash','pandas', 'networkx', 'plotly', 'numpy', 'dash_daq', 'dash-bootstrap-components', 'pydotplus'
+        'dash','pandas', 'networkx', 'plotly', 'numpy', 'dash_daq', 'dash-bootstrap-components', 'pydotplus',
+        'dash-cytoscape'
     ],
     author="Nemanja Hranisavljevic & Tom Westermann",
     author_email="nemanja@ai4cps.com",
