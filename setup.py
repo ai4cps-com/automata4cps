@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="automata4cps",
-    version="0.1.0",
+    version="0.1.1",
     packages=find_packages(),
     install_requires=[
         # List your project's dependencies here, for example:
