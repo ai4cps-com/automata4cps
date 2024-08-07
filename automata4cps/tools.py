@@ -98,6 +98,14 @@ def filter_na_and_constant(data):
     return data
 
 
+def flatten_dict(dict_of_lists):
+    return [item for sublist in dict_of_lists.values() for item in sublist]
+
+
+def get_binary_cols(df):
+    binary_columns = [col for col in df.columns if set(df[col].unique()).issubset({0, 1})]
+    return binary_columns
+
 def melt_dataframe(df, timestamp=None):
     if timestamp is None:
         timestamp = df.columns[0]
@@ -443,8 +451,22 @@ def encode_nominal(x, columns=None, categories=None):
         categories = dict()
     for c in columns:
         x[c] = pd.Categorical(x[c], categories=categories.get(c, None))
-    return pd.get_dummies(x, columns=columns, dtype=float)
+    new_dataset = pd.get_dummies(x, columns=columns, dtype=float)
 
+    # Get the original columns
+    original_columns = x.columns
+
+    # Get the new columns after encoding
+    new_columns = new_dataset.columns
+
+    # Determine the newly created columns by `pd.get_dummies`
+    newly_created_columns = set(new_columns) - set(original_columns)
+
+    # Create a mapping from original columns to their new dummy columns
+    mapping = {col: [dummy_col for dummy_col in newly_created_columns if dummy_col.startswith(f"{col}_")] for col in
+               columns}
+
+    return new_dataset, mapping
 
 def encode_nominal_list_df(dfs, columns=None, categories=None):
     if columns is None:
@@ -454,6 +476,16 @@ def encode_nominal_list_df(dfs, columns=None, categories=None):
         for c in columns:
             categories[c] = np.sort(list(np.unique(np.concatenate([df[c].unique() for df in dfs]))))
     return [encode_nominal(x, columns, categories=categories) for x in dfs]
+
+
+def dict_to_df(d):
+    max_rows = max(len(v) for v in d.values())
+    return pd.DataFrame({k: v + [None] * (max_rows - len(v)) for k, v in d.items()})
+
+
+def dict_to_csv(d, name="csv.csv"):
+    max_rows = max(len(v) for v in d.values())
+    pd.DataFrame({k: v + [None] * (max_rows - len(v)) for k, v in d.items()}).to_csv(name, sep=";", index=False)
 
 
 if __name__ == "__main__":
