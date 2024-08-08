@@ -429,8 +429,8 @@ def binary_ordinal_encode(column, order):
     # Apply the encoding to the column
     encoded_df = pd.DataFrame(column.map(encoding_map).tolist(),
                               columns=[f"{column.name}_bit_{i}" for i in range(num_bits)])
-
     return encoded_df
+
 
 def encode_ordinal(x, columns, order=None):
     if columns is None:
@@ -443,6 +443,7 @@ def encode_ordinal(x, columns, order=None):
 
     # Concatenate the encoded columns with the original DataFrame (excluding the original ordinal columns)
     return pd.concat([x.drop(columns, axis=1)] + new_data, axis=1)
+
 
 def encode_nominal(x, columns=None, categories=None):
     if columns is None:
@@ -463,10 +464,10 @@ def encode_nominal(x, columns=None, categories=None):
     newly_created_columns = set(new_columns) - set(original_columns)
 
     # Create a mapping from original columns to their new dummy columns
-    mapping = {col: [dummy_col for dummy_col in newly_created_columns if dummy_col.startswith(f"{col}_")] for col in
-               columns}
-
+    mapping = {col: [dummy_col for dummy_col in newly_created_columns if dummy_col.startswith(f"{col}_")]
+               for col in columns}
     return new_dataset, mapping
+
 
 def encode_nominal_list_df(dfs, columns=None, categories=None):
     if columns is None:
@@ -489,7 +490,9 @@ def dict_to_csv(d, name="csv.csv"):
 
 
 if __name__ == "__main__":
-    from automata4cps.examples import examples
-
-    data = examples.high_rack_storage_system_sfowl()
-    data = split_data_on_signal_value(data, sig_name="O_w_BRU_Axis_Ctrl", new_value=3)
+    # from automata4cps.examples import examples
+    #
+    # data = examples.high_rack_storage_system_sfowl()
+    # data = split_data_on_signal_value(data, sig_name="O_w_BRU_Axis_Ctrl", new_value=3)
+    X = pd.DataFrame({"Col1": [1, 2, 3], "Col2": [2, 3, 2]})
+    Xe = encode_nominal(X, columns=["Col1", "Col2"])
