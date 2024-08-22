@@ -1,0 +1,36 @@
+﻿automata4cps.cps.CPS
+====================
+
+.. currentmodule:: automata4cps.cps
+
+.. autoclass:: CPS
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~CPS.__init__
+      ~CPS.get_all_components
+      ~CPS.get_choice_state
+      ~CPS.get_component
+      ~CPS.get_components
+      ~CPS.get_execution_data
+      ~CPS.set_child_component
+      ~CPS.stop_condition
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~CPS.overall_system
+      ~CPS.state
+   
+   

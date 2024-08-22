@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>automata4cps.cps.CPS &#8212; Automata4CPS 0.1.11 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=822347c1" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=581a535d" />
+    <script src="../_static/documentation_options.js?v=1e825a29"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="automata4cps.cps.CPSComponent" href="automata4cps.cps.CPSComponent.html" />
+    <link rel="prev" title="automata4cps.cps" href="../automata4cps.cps.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="automata4cps-cps-cps">
+<h1>automata4cps.cps.CPS<a class="headerlink" href="#automata4cps-cps-cps" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="automata4cps.cps.CPS">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">automata4cps.cps.</span></span><span class="sig-name descname"><span class="pre">CPS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">components</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.cps.CPS" title="Link to this definition">¶</a></dt>
+<dd><p>CPS class represents a cyber-physical system. It is used to model the hierarchy in the system as each CPS can
+contain a mixture of other CPS and CPS components. The leaves of the hierarchy are only CPS component objects
+which define their dynamics and communication with other components.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="automata4cps.cps.CPS.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#automata4cps.cps.CPS.id" title="Link to this definition">¶</a></dt>
+<dd><p>Identifier of the object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="automata4cps.cps.CPS.com">
+<span class="sig-name descname"><span class="pre">com</span></span><a class="headerlink" href="#automata4cps.cps.CPS.com" title="Link to this definition">¶</a></dt>
+<dd><p>A collection of components</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>OrderedDict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="automata4cps.cps.CPS.parent_system">
+<span class="sig-name descname"><span class="pre">parent_system</span></span><a class="headerlink" href="#automata4cps.cps.CPS.parent_system" title="Link to this definition">¶</a></dt>
+<dd><p>Parent CPS that this (sub) system belongs to</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#automata4cps.cps.CPS" title="automata4cps.cps.CPS">CPS</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="automata4cps.cps.CPS.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">components</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.cps.CPS.__init__" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>id</strong> (<em>str</em>) – ID of the system</p></li>
+<li><p><strong>components</strong> (<em>iterable</em>) – Child components of the system</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#automata4cps.cps.CPS.__init__" title="automata4cps.cps.CPS.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(id, components)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_all_components</span></code>([exclude])</p></td>
+<td><p>Returns a list of all child components (not only direct) except those with ids possibly provided in exclude.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_choice_state</span></code>(comp)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_component</span></code>(name)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_components</span></code>([exclude])</p></td>
+<td><p>Returns a list of all direct child components except those with ids possibly provided in exclude.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_execution_data</span></code>([flat])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_child_component</span></code>(id, com)</p></td>
+<td><p>Set component with the id.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">stop_condition</span></code>(t)</p></td>
+<td><p>Simulation stop condition which can be overridden by the subclasses.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">overall_system</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">state</span></code></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Automata4CPS</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Automata4CPS installation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../automata4cps.html">automata4cps package</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../automata4cps.html">automata4cps package</a><ul>
+  <li><a href="../automata4cps.cps.html">automata4cps.cps</a><ul>
+      <li>Previous: <a href="../automata4cps.cps.html" title="previous chapter">automata4cps.cps</a></li>
+      <li>Next: <a href="automata4cps.cps.CPSComponent.html" title="next chapter">automata4cps.cps.CPSComponent</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, Nemanja Hranisavljevic, Tom Westermann.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.0.2</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/_autosummary/automata4cps.cps.CPS.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

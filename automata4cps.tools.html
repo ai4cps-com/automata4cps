@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>automata4cps.tools &#8212; Automata4CPS 0.1.11 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=822347c1" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=581a535d" />
+    <script src="_static/documentation_options.js?v=1e825a29"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="automata4cps.vis" href="automata4cps.vis.html" />
+    <link rel="prev" title="automata4cps.discretization" href="automata4cps.discretization.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-automata4cps.tools">
+<span id="automata4cps-tools"></span><h1>automata4cps.tools<a class="headerlink" href="#module-automata4cps.tools" title="Link to this heading">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="automata4cps.tools.binary_ordinal_encode">
+<span class="sig-prename descclassname"><span class="pre">automata4cps.tools.</span></span><span class="sig-name descname"><span class="pre">binary_ordinal_encode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">column</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.tools.binary_ordinal_encode" title="Link to this definition">¶</a></dt>
+<dd><p>Encodes a pandas Series with binary ordinal encoding based on the specified order.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>column</strong> (<em>pd.Series</em>) – The column to encode.</p></li>
+<li><p><strong>order</strong> (<em>list</em>) – The ordered list of unique values in the column.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The binary ordinal encoded DataFrame for the given column.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="automata4cps.tools.composite_f1_score">
+<span class="sig-prename descclassname"><span class="pre">automata4cps.tools.</span></span><span class="sig-name descname"><span class="pre">composite_f1_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">anom_labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_event_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">true_anom_idx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.tools.composite_f1_score" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="automata4cps.tools.compute_purity">
+<span class="sig-prename descclassname"><span class="pre">automata4cps.tools.</span></span><span class="sig-name descname"><span class="pre">compute_purity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cluster_assignments</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_assignments</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.tools.compute_purity" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="automata4cps.tools.create_events_from_signal_vectors">
+<span class="sig-prename descclassname"><span class="pre">automata4cps.tools.</span></span><span class="sig-name descname"><span class="pre">create_events_from_signal_vectors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig_names</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.tools.create_events_from_signal_vectors" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="automata4cps.tools.dict_to_csv">
+<span class="sig-prename descclassname"><span class="pre">automata4cps.tools.</span></span><span class="sig-name descname"><span class="pre">dict_to_csv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'csv.csv'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.tools.dict_to_csv" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="automata4cps.tools.dict_to_df">
+<span class="sig-prename descclassname"><span class="pre">automata4cps.tools.</span></span><span class="sig-name descname"><span class="pre">dict_to_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.tools.dict_to_df" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="automata4cps.tools.encode_nominal">
+<span class="sig-prename descclassname"><span class="pre">automata4cps.tools.</span></span><span class="sig-name descname"><span class="pre">encode_nominal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">categories</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.tools.encode_nominal" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="automata4cps.tools.encode_nominal_list_df">
+<span class="sig-prename descclassname"><span class="pre">automata4cps.tools.</span></span><span class="sig-name descname"><span class="pre">encode_nominal_list_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dfs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">categories</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.tools.encode_nominal_list_df" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="automata4cps.tools.encode_ordinal">
+<span class="sig-prename descclassname"><span class="pre">automata4cps.tools.</span></span><span class="sig-name descname"><span class="pre">encode_ordinal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.tools.encode_ordinal" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="automata4cps.tools.filter_na_and_constant">
+<span class="sig-prename descclassname"><span class="pre">automata4cps.tools.</span></span><span class="sig-name descname"><span class="pre">filter_na_and_constant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.tools.filter_na_and_constant" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="automata4cps.tools.filter_signals">
+<span class="sig-prename descclassname"><span class="pre">automata4cps.tools.</span></span><span class="sig-name descname"><span class="pre">filter_signals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig_names</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.tools.filter_signals" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="automata4cps.tools.flatten_dict">
+<span class="sig-prename descclassname"><span class="pre">automata4cps.tools.</span></span><span class="sig-name descname"><span class="pre">flatten_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dict_of_lists</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.tools.flatten_dict" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="automata4cps.tools.get_binary_cols">
+<span class="sig-prename descclassname"><span class="pre">automata4cps.tools.</span></span><span class="sig-name descname"><span class="pre">get_binary_cols</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.tools.get_binary_cols" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="automata4cps.tools.group_data_on_discrete_state">
+<span class="sig-prename descclassname"><span class="pre">automata4cps.tools.</span></span><span class="sig-name descname"><span class="pre">group_data_on_discrete_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_column</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_col</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.tools.group_data_on_discrete_state" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="automata4cps.tools.melt_dataframe">
+<span class="sig-prename descclassname"><span class="pre">automata4cps.tools.</span></span><span class="sig-name descname"><span class="pre">melt_dataframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timestamp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.tools.melt_dataframe" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="automata4cps.tools.plot_data">
+<span class="sig-prename descclassname"><span class="pre">automata4cps.tools.</span></span><span class="sig-name descname"><span class="pre">plot_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timestamp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_columns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">discrete</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotStates</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit_num_points</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xaxis_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">customdata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iterate_colors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_title_font_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">14</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opacity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertical_spacing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.005</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sharey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bounds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_only_changes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yAxisLabelOffset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marker_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showlegend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'lines+markers'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.tools.plot_data" title="Link to this definition">¶</a></dt>
+<dd><p>Plots all variables in the dataframe as subplots.</p>
+<p>plotStates: if True, changes interpolation to ‘hv’, therefore keeping the last value
+yAxisLabelOffset: if True, adds a offset to the plots y axis labels. Improves readability on long subplot names.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="automata4cps.tools.plot_execution_tree">
+<span class="sig-prename descclassname"><span class="pre">automata4cps.tools.</span></span><span class="sig-name descname"><span class="pre">plot_execution_tree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes_to_color</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">font_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.tools.plot_execution_tree" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="automata4cps.tools.remove_timestamps_without_change">
+<span class="sig-prename descclassname"><span class="pre">automata4cps.tools.</span></span><span class="sig-name descname"><span class="pre">remove_timestamps_without_change</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig_names</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.tools.remove_timestamps_without_change" title="Link to this definition">¶</a></dt>
+<dd><p>Removes timestamps where no values changed in comparison to the previous timestamp.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="automata4cps.tools.split_data_on_signal_value">
+<span class="sig-prename descclassname"><span class="pre">automata4cps.tools.</span></span><span class="sig-name descname"><span class="pre">split_data_on_signal_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.tools.split_data_on_signal_value" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="automata4cps.tools.split_train_valid">
+<span class="sig-prename descclassname"><span class="pre">automata4cps.tools.</span></span><span class="sig-name descname"><span class="pre">split_train_valid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">other</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">split</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.tools.split_train_valid" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading">¶</a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+</tbody>
+</table>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Automata4CPS</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Automata4CPS installation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="automata4cps.html">automata4cps package</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="automata4cps.html">automata4cps package</a><ul>
+      <li>Previous: <a href="automata4cps.discretization.html" title="previous chapter">automata4cps.discretization</a></li>
+      <li>Next: <a href="automata4cps.vis.html" title="next chapter">automata4cps.vis</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, Nemanja Hranisavljevic, Tom Westermann.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.0.2</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/automata4cps.tools.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

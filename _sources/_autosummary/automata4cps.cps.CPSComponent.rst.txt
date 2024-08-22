@@ -1,0 +1,51 @@
+﻿automata4cps.cps.CPSComponent
+=============================
+
+.. currentmodule:: automata4cps.cps
+
+.. autoclass:: CPSComponent
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~CPSComponent.__init__
+      ~CPSComponent.apply_event
+      ~CPSComponent.context
+      ~CPSComponent.discrete_event_dynamics
+      ~CPSComponent.finish
+      ~CPSComponent.finish_condition
+      ~CPSComponent.get_execution_data
+      ~CPSComponent.get_sim_state
+      ~CPSComponent.input
+      ~CPSComponent.invariants
+      ~CPSComponent.load_context
+      ~CPSComponent.on_entry
+      ~CPSComponent.output
+      ~CPSComponent.predict
+      ~CPSComponent.predict_stream
+      ~CPSComponent.react
+      ~CPSComponent.read_event
+      ~CPSComponent.set_sim_state
+      ~CPSComponent.start
+      ~CPSComponent.time_continuous_dynamics
+      ~CPSComponent.time_discrete_dynamics
+      ~CPSComponent.timed_transition
+      ~CPSComponent.update_input
+      ~CPSComponent.wait
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~CPSComponent.overall_system
+   
+   
