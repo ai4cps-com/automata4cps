@@ -1,7 +1,8 @@
 """
-    Authors:
+    The module implements the novel DENTA algorithm for the learning of hybrid automata from data.
+
+    Author:
     Nemanja Hranisavljevic, hranisan@hsu-hh.de, nemanja@ai4cps.com
-    Tom Westermann, tom.westermann@hsu-hh.de, tom@ai4cps.com
 """
 
 import pprint
@@ -20,6 +21,7 @@ from automata4cps import learn as automata_learn
 from sklearn.preprocessing import LabelEncoder
 from plotly.subplots import make_subplots
 import mlflow
+from torch import optim
 
 
 class DENTA(nn.Module, automata.Automaton):
@@ -232,6 +234,12 @@ class DENTA(nn.Module, automata.Automaton):
         logp = -self.free_energy_components(x).sum()
         grad = torch.autograd.grad(logp, x, create_graph=True)[0] # Create graph True to allow later backprop
         return grad
+
+    def encode_ordinal(self, x, columns, order=None):
+        return encode_ordinal(x, columns, order)
+
+    def encode_nominal(self, x, columns=None):
+        return encode_nominal(x, columns)
 
     def dsm_loss(self, x, v, sigma=0.1):
         """DSM loss from
@@ -920,7 +928,6 @@ class DENTA(nn.Module, automata.Automaton):
 
         return purity
 
-
 if __name__ == '__main__':
     # Preprocess the data
     num_sequences = 1  # Number of sequences
@@ -959,3 +966,31 @@ if __name__ == '__main__':
     # model.plot_frequency_of_latent_combinations([data]).show()
     model.plot_activation_probabilities(valid).show()
     #model.plot_discretization(timestamp, valid_states.cpu(), valid_mode_prediction[0], data.cpu(), timestamp.cpu()).show()
+
+
+class LinearRegression(nn.Module):
+    def __init__(self, input_dim, output_dim):
+        super(LinearRegression, self).__init__()
+        self.linear = nn.Linear(input_dim, output_dim)
+
+    def forward(self, x):
+        return self.linear(x)
+
+    def train_model(self, X, y, num_epochs=1000, lr=0.01):
+        criterion = nn.MSELoss()  # Mean Squared Error Loss
+        optimizer = optim.SGD(self.parameters(), lr=lr)  # Stochastic Gradient Descent with learning rate of 0.01
+
+        for epoch in range(num_epochs):
+            # Forward pass: Compute predicted y by passing X to the model
+            y_pred = self(X)
+
+            # Compute and print loss
+            loss = criterion(y_pred, y)
+
+            # Zero gradients, perform a backward pass, and update the weights.
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            if (epoch + 1) % 100 == 0:
+                print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
