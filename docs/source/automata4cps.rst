@@ -6,9 +6,9 @@ automata4cps package
    :undoc-members:
    :show-inheritance:
 
-.. autosummary::
-   :toctree: _autosummary
-   :recursive:
+.. toctree::
+   :maxdepth: 1
+   :caption: Contents:
 
    automata4cps.cps
    automata4cps.learn
