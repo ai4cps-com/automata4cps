@@ -34,6 +34,11 @@ jobs:
           name: built-docs
           path: ./docs/build/html  # Ensure this matches your build directory
 
+
+      - name: Create CNAME file
+        run: echo "automata4cps.ai4cps.com" > ./docs/build/html/CNAME  # Replace with your custom domain
+
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
