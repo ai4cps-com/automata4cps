@@ -16,7 +16,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.x'  # Replace with the Python version you're using
+          python-version: '3.11.9'  # Replace with the Python version you're using
 
       - name: Install dependencies
         run: |
@@ -25,7 +25,7 @@ jobs:
 
       - name: Build documentation
         run: |
-          cd docs  # Change to the directory where your Sphinx source files are located
+          cd docs
           make html
 
       - name: Deploy to GitHub Pages
