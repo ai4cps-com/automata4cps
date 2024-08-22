@@ -5,7 +5,7 @@ of the behavior of hybrid dynamical systems, with the focus on
 Cyber-Physical Systems (CPS).
 The code was developed for several research publications ([bibtex](cite.bib)).
 
--   Website (www.ai4cps.com/automata4cps - under construction)
+-   Website ([automata4cps.ai4cps.com](http://automata4cps.ai4cps.com))
 -   Contact ([contact@ai4cps.com](mailto:contact@ai4cps.com))
 
 
