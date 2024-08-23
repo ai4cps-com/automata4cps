@@ -753,3 +753,94 @@ def plot_bipartite_graph(network):
     edge_labels = nx.get_edge_attributes(SM, 'weight')
     nx.draw_networkx_edge_labels(SM, pos, edge_labels=edge_labels,  label_pos=0.7, font_color='blue')
     plt.show()
+
+
+def plot_execution_tree(graph, nodes_to_color, color, font_size=30):
+    # The function plots system execution in form of a graph, where horizontal position of the nodes corresponds to the
+    # node's timestamp. The tree branches vertically.
+
+    # for ntd in nodes_to_delete:
+    #     if ntd in graph:
+    #         prenodes = list(graph.predecessors(ntd))
+    #         sucnodes = list(graph.successors(ntd))
+    #         preedges = list(graph.in_edges(ntd))
+    #         sucedges = list(graph.out_edges(ntd))
+    #         edgestodelete = preedges + sucedges
+    #         if ((len(preedges) > 0) and (len(sucedges) > 0)):
+    #             for prenode in prenodes:
+    #                 for sucnode in sucnodes:
+    #                     graph.add_edge(prenode, sucnode)
+    #         if (len(edgestodelete) > 0):
+    #             graph.remove_edges_from(edgestodelete)
+
+    startstring = list(graph.nodes)[0]
+    arr_elements = []
+    num_of_nodes = graph.number_of_nodes()
+    # vertical_height = num_of_states
+    visited = set()
+    stack = [startstring]
+    while stack:
+        node = stack.pop()
+        if node not in visited:
+            elemid = str(node)
+            elemlabel = graph.nodes[node].get('label')
+            datepos1 = datetime.strptime(startstring, "%d/%m/%Y, %H:%M:%S")
+            datepos2 = datetime.strptime(node, "%d/%m/%Y, %H:%M:%S")
+            nodeweight = graph.nodes[node].get('weight')
+            ypos = 0
+            if nodeweight == 0:
+                ypos = num_of_states * 100
+            else:
+                ypos = (nodeweight - 1) * 200
+            element = {
+                'data': {
+                    'id': elemid,
+                    'label': elemlabel
+                },
+                'position': {
+                    'x': (datepos2 - datepos1).total_seconds() / 7200,
+                    'y': ypos
+                },
+                # 'locked': True
+            }
+            arr_elements.append(element)
+            visited.add(node)
+            stack.extend(neighbor for neighbor in graph.successors(node) if neighbor not in visited)
+    for u, v in list(graph.edges):
+        edge_element = {
+            'data': {
+                'source': u,
+                'target': v
+            }
+        }
+        arr_elements.append(edge_element)
+
+
+    colorcode = ['gray'] * num_of_nodes
+    for n in nodes_to_color:
+        if n in graph:
+            n_ind = list(graph.nodes).index(n)
+            if (n_ind < num_of_nodes):
+                colorcode[n_ind] = color
+    new_stylesheet = []
+    for i in range(0, num_of_nodes):
+        new_stylesheet.append({
+            'selector': f'node[id = "{list(graph.nodes)[i]}"]',
+            'style': {
+                'font-size': f'{font_size}px',
+                'content': 'data(label)',
+                'background-color': colorcode[i],
+                'text-valign': 'top',
+                'text-halign': 'center',
+                # 'animate': True
+            }
+        })
+
+    cytoscapeobj = cyto.Cytoscape(
+        id='org-chart',
+        layout={'name': 'preset'},
+        style={'width': '2400px', 'height': '1200px'},
+        elements=arr_elements,
+        stylesheet=new_stylesheet
+    )
+    return cytoscapeobj
