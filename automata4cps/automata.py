@@ -1,7 +1,10 @@
 """
+    The module provides a class Automaton which inherits CPSComponent and implements the dynamics of different kinds of
+    automata.
+
     Authors:
-    Nemanja Hranisavljevic, hranisan@hsu-hh.de, nemanja@ai4cps.com
-    Tom Westermann, tom.westermann@hsu-hh.de, tom@ai4cps.com
+    - Nemanja Hranisavljevic, hranisan@hsu-hh.de, nemanja@ai4cps.com
+    - Tom Westermann, tom.westermann@hsu-hh.de, tom@ai4cps.com
 """
 
 import numpy as np
@@ -9,15 +12,6 @@ from collections import OrderedDict
 import pandas as pd
 from scipy.integrate import solve_ivp
 import networkx as nx
-import plotly.graph_objects as go
-import pydotplus as pdp
-from plotly import subplots
-from plotly.colors import DEFAULT_PLOTLY_COLORS
-from itertools import chain
-import dash_cytoscape as cyto
-from dash import html
-import dash_bootstrap_components as dbc
-import pprint
 import warnings
 from automata4cps.cps import CPSComponent
 
@@ -25,11 +19,10 @@ from automata4cps.cps import CPSComponent
 class Automaton (CPSComponent):
     """
     Automaton class is the main class for modeling various kinds of hybrid systems.
-
     """
 
     def __init__(self, states: list = None, events: list = None, transitions: list = None,
-                 unknown_state: str = 'raise', id="", initial_q=()):
+                 unknown_state: str = 'raise', id="", initial_q=(), super_states=(), decision_states=(), **kwargs):
         """
         Class initialization from lists of elements.
         :param states: Discrete states / modes of continuous behavior.
@@ -40,10 +33,25 @@ class Automaton (CPSComponent):
         :param unknown_state: The name of unknown states during "play in", if "raise", an exception will be raised.
         """
         self._G = nx.MultiDiGraph()
+        if initial_q:
+            initial_q = [initial_q]
         self.q0 = OrderedDict.fromkeys(initial_q)
         self.Sigma = set()
         self.previous_node_positions = None
         self.UNKNOWN_STATE = unknown_state
+        if super_states is not None:
+            if type(super_states) is str:
+                self.__super_states = [super_states]
+            else:
+                self.__super_states = list(super_states)
+
+            self._G.add_nodes_from(self.__super_states)
+
+        if decision_states is not None:
+            if type(decision_states) is str:
+                self.decision_states = [decision_states]
+            else:
+                self.decision_states = list(decision_states)
 
         if states is not None:
             self._G.add_nodes_from(states)
@@ -58,7 +66,38 @@ class Automaton (CPSComponent):
                 else:
                     self._G.add_edge(tr[0], tr[2], event=tr[1])
 
-        CPSComponent.__init__(self, id)
+        CPSComponent.__init__(self, id, **kwargs)
+
+    @property
+    def discrete_states(self):
+        return self._G.nodes
+
+    @property
+    def transitions(self):
+        return self._G.edges
+
+    @property
+    def state(self):
+        return self._q
+
+    @state.setter
+    def state(self, state):
+        if type(state) is not tuple:
+            new_states = (state, (), (), 0)
+        elif len(state) < 4:
+            new_states = [(), (), (), 0]
+            for i, v in enumerate(state):
+                new_states[i] = v
+        else:
+            new_states = state
+
+        if new_states[0] not in self.discrete_states:
+            raise ValueError(f'State "{new_states[0]}" is not a valid state. Valid states are: {self.discrete_states}')
+
+        self._q = new_states[0]
+        self._xt = new_states[1]
+        self._xk = new_states[2]
+        self._t = new_states[3]
 
     @property
     def num_modes(self):
@@ -85,6 +124,16 @@ class Automaton (CPSComponent):
         """
         self._G.remove_edge(source, dest)
 
+    def is_decision(self, state, overall_state):
+        return state in self.decision_states
+
+    def get_alternatives(self, state, system_state):
+        if self.is_decision(state, system_state):
+            trans = [(x[3]['event'], dict()) for x in self.out_transitions(state)]
+            return [(None, None)] + trans
+        else:
+            return None
+
     def remove_rare_transitions(self, min_p=0, min_num=0, keep_from_initial=False, keep_states=False, keep=None):
         self.learn_transition_probabilities()
 
@@ -96,7 +145,7 @@ class Automaton (CPSComponent):
                 self.remove_transition(source, dest)
 
         if not keep_states:
-            for s in list(self.states):
+            for s in list(self.discrete_states):
                 # if s in self.q0:
                 #     continue
                 if len(self.in_transitions(s)) == 0 and len(self.out_transitions(s)) == 0:
@@ -114,7 +163,7 @@ class Automaton (CPSComponent):
         print('Remove rare transitions')
 
     def learn_transition_probabilities(self):
-        for s in self.states:
+        for s in self.discrete_states:
             total_num = sum([len(data['timing']) for s, d, e, data in self.out_transitions(s)])
             for s, d, e, data in self.out_transitions(s):
                 data['probability'] = len(data['timing']) / total_num
@@ -128,14 +177,6 @@ class Automaton (CPSComponent):
                 events.add(tr[2])
         return True
 
-    @property
-    def states(self):
-        return self._G.nodes
-    
-    @property
-    def transitions(self):
-        return self._G.edges
-
     def update_timing_boundaries(self, source, destination, event, newTiming):
         edge_data = self._G.get_edge_data(source, destination, event)
         try:
@@ -148,7 +189,7 @@ class Automaton (CPSComponent):
             edge_data['maxTiming'] = newTiming
 
     def is_deterministic(self):
-        for q in self.states:
+        for q in self.discrete_states:
             if not self.state_is_deterministic(q):
                 print('State', q, 'not deterministic:')
                 for tr in sorted(self.out_transitions(q), key=lambda x: x[2]):
@@ -314,14 +355,18 @@ class Automaton (CPSComponent):
                 new_q = dests.pop()
         return new_q, None, None
 
-    def timed_transition(self, q, xc, xd, y, use_observed_timings):
-        if self.probabilistic_events:
-            possible_destinations = list(ev for s, d, ev in self._G.out_edges(q, data=True) if s == q)
-            if possible_destinations:
-                choice = np.random.choice(possible_destinations, p=[p['prob'] for p in possible_destinations])
-                return choice['time'], choice['event']
+    def timed_transition(self, q, xc, xd, y, use_observed_timings=False):
+        possible_destinations = list(ev for s, d, ev in self._G.out_edges(q, data=True) if s == q)
+        if possible_destinations:
+            if len(possible_destinations) == 1:
+                dest = possible_destinations[0]
+                if 'time' in dest:
+                    return dest['time'], dest['event']
+            else:
+                choice = np.random.choice(possible_destinations, p=[p['prob'] if 'prob' in p else 1/len(possible_destinations) for p in possible_destinations])
+                if 'time' in choice:
+                    return choice['time'], choice['event']
         return None, None
-
 
     def get_transition(self, s, d=None, e=None, if_more_than_one='raise'):
         """
@@ -391,7 +436,7 @@ class Automaton (CPSComponent):
         :param y:
         :return:
         """
-        state_data = self.states[q]
+        state_data = self.discrete_states[q]
         time = []
         output = []
         state = []
@@ -447,346 +492,6 @@ class Automaton (CPSComponent):
     def get_transitions(self):
         return list(self._G.edges(data=True, keys=True))
 
-    def view_cytoscape(self, id=None, node_labels=False, edge_labels=True, edge_font_size=6, edge_text_max_width=None,
-                       callback_app=None):
-        if id is None:
-            id = "graph"
-        nodes = []
-        for n in self.states:
-            nodes.append(dict(data={'id': n, 'label': n}))
-
-        edges = []
-        for e in self.get_transitions():
-            if 'timing' in e[3]:
-                freq = len(e[3]['timing'])
-                timings = [pd.Timedelta(x) for x in e[3]['timing']]
-            else:
-                freq = 0
-                timings = []
-            edge = dict(data={'source': e[0],
-                              'target': e[1],
-                              'label': f'{e[3]["event"]} [{freq}]',
-                              'timing': timings})
-            edges.append(edge)
-
-        elements = dict(nodes=nodes, edges=edges)
-        node_style = {'width': 10,
-                      'height': 10}
-        if node_labels:
-            node_style['label'] = 'data(id)'
-            node_style['font-size'] = 6
-            node_style['text-wrap'] = 'wrap'
-            node_style['text-max-width'] = 50
-
-        edge_style = {
-                    # The default curve style does not work with certain arrows
-                    'curve-style': 'bezier',
-                    'target-arrow-shape': 'triangle',
-                    'target-arrow-size': 3,
-                    'width': 1,
-                    'font-color': 'gray',
-                    'text-wrap': 'wrap',
-                    'font-size': edge_font_size,
-                    'text-max-width': edge_text_max_width
-        }
-        if edge_labels:
-            edge_style['label'] = 'data(label)'
-
-        stylesheet = [
-            {
-                'selector': 'node',
-                'style': node_style
-            },
-            {
-                'selector': 'edge',
-                'style': edge_style
-            }]
-
-        network = cyto.Cytoscape(
-            id=id,
-            layout={'name': 'cose', "fit": True},
-            # layout={
-            #     'id': 'breadthfirst',
-            #     'roots': '[id = "initial"]'
-            # },
-            maxZoom=2,
-            minZoom=0.5,
-            style={'width': '100%', 'height': '700px'}, stylesheet=stylesheet,
-            elements=elements)
-
-        modal_state_data = dbc.Modal(children=[dbc.ModalHeader("Timings"),
-                                               dbc.ModalBody(html.Div(children=[]))],
-                                     id=f"{id}-modal-state-data")
-        modal_transition_data = dbc.Modal(children=[dbc.ModalHeader("Timings"),
-                                                    dbc.ModalBody(html.Div(children=[]))],
-                                     id=f"{id}-modal-transition-data")
-        # network = html.Div([network, modal_state_data, modal_transition_data])
-        return network
-
-    def view_plotly(self, layout="dot", marker_size=20, node_positions=None, show_events=True, show_num_occur=False,
-                    show_state_label=True, font_size=10, plot_self_transitions=True, use_previos_node_positions=False,
-                    **kwargs):
-
-        # layout = 'kamada_kawai'  # TODO
-        edge_scatter_lines = None
-        annotations = []
-        if node_positions is None:
-            if use_previos_node_positions:
-                node_positions = self.previous_node_positions
-            else:
-                g = self._G
-                if layout == "dot":
-                    graph = pdp.graph_from_edges([('"' + tr[0] + '"', '"' + tr[1] + '"')
-                                                  for tr in g.edges], directed=True)
-                    # graph.set_node_defaults(shape='point')
-                    for nnn in g.nodes:
-                        graph.add_node(pdp.Node(nnn, shape='point'))
-                    graph.set_prog('dot')
-                    graph = graph.create(format="dot")
-                    # graph.
-                    # graph.write_dot('temp.dot')
-                    # graph.write_svg('temp.svg')
-                    # graph = pdp.graph_from_dot_file('temp.dot')
-                    graph = pdp.graph_from_dot_data(graph)
-                    node_positions = {n.get_name().strip('"'): tuple(float(x) for x in n.get_pos()[1:-1].split(','))
-                                      for n in graph.get_nodes() if
-                                      n.get_name().strip('"') not in ['\\r\\n', 'node', 'graph']}
-                    edges = {e.obj_dict['points']: e.get_pos()[3:-1].split(' ')
-                             for e in graph.get_edges()}  # [3:].split(",")
-
-                    # edge_shapes = []
-                    # edge_scatter_lines = []
-                    # for points, edg in edges.items():
-                    #     edg = [tuple(float(eee.replace('\r', '').replace('\n', '').replace('\\', '').strip())
-                    #                  for eee in e.split(",")) for e in edg]
-                    #     node_pos_start = node_positions[points[0].replace('"', '')]
-                    # edg.insert(0, node_pos_finish)ääääääääääääääääääääääääääääääääääääääääääääääääääääääää
-                    # node_pos_finish = node_positions[points[1].replace('"', '')]
-                    # control_points = ' '.join(','.join(map(str, e)) for e in edg[1:])
-                    # {node_pos_start[0]}, {node_pos_start[1]}
-                    # Cubic Bezier Curves
-                    # edge_shapes.append(dict(
-                    #     type="path",
-                    #     path=f"M {node_pos_start[0]},{node_pos_start[1]} C {control_points}", #{node_pos_finish[0]}, {node_pos_finish[1]}",
-                    #     line_color="MediumPurple",
-                    # ))
-
-                    # edg.append(node_pos_start)
-
-                    # edg.append((None, None))
-                    # annotations.append(dict(ax=node_pos_finish[0], ay=node_pos_finish[1], axref='x', ayref='y',
-                    #     x=edg[-2][0], y=edg[-2][1], xref='x', yref='y',
-                    #     showarrow=True, arrowhead=1, arrowsize=2, startarrowhead=0))
-                    # edge_scatter_lines.append(edg)
-                    # parse_path(edges)
-                    # points_from_path(edges)
-                elif layout == 'spectral':
-                    node_positions = nx.spectral_layout(g, **kwargs)
-                elif layout == 'kamada_kawai':
-                    node_positions = nx.kamada_kawai_layout(g, **kwargs)
-                elif layout == 'fruchterman_reingold':
-                    node_positions = nx.fruchterman_reingold_layout(g, **kwargs)
-            self.previous_node_positions = node_positions
-        node_x = []
-        node_y = []
-        for node in self._G.nodes:
-            x, y = node_positions[node]
-            node_x.append(x)
-            node_y.append(y)
-        texts = []
-        for v in self._G.nodes:
-            try:
-                texts.append(self.print_state(v))
-            except:
-                texts.append('Error printing state: ')
-        if show_state_label:
-            mode = 'markers+text'
-        else:
-            mode = 'markers'
-        node_trace = go.Scatter(x=node_x, y=node_y, text=list(self._G.nodes), mode=mode, textposition="top center",
-                                hovertext=texts, hovertemplate='%{hovertext}<extra></extra>',
-                                marker=dict(size=marker_size, line_width=1), showlegend=False)
-
-        annotations = [dict(ax=node_positions[tr[0]][0], ay=node_positions[tr[0]][1], axref='x', ayref='y',
-                            x=node_positions[tr[1]][0], y=node_positions[tr[1]][1], xref='x', yref='y',
-                            showarrow=True, arrowhead=1, arrowsize=2) for tr in self._G.edges]
-
-        # annotations = []
-
-        def fun(tr):
-            if show_events and show_num_occur:
-                return '<i>{} ({})</i>'.format(tr[2], self.num_occur(tr[0], tr[2]))
-            elif show_events:
-                return '<i>{}</i>'.format(tr[2])
-            elif show_num_occur:
-                return '<i>{}</i>'.format(self.num_occur(tr[0], tr[2]))
-
-        if show_num_occur or show_events:
-            annotations_text = [dict(x=(0.4 * node_positions[tr[0]][0] + 0.6 * node_positions[tr[1]][0]),
-                                     y=(0.4 * node_positions[tr[0]][1] + 0.6 * node_positions[tr[1]][1]),
-                                     xref='x', yref='y', text=fun(tr), font=dict(size=font_size, color='darkblue'),
-                                     yshift=0, showarrow=False)  # , bgcolor='white')
-                                for tr in self.get_transitions() if plot_self_transitions or tr[0] != tr[1]]
-
-            annotations += annotations_text
-
-        traces = [node_trace]
-        if edge_scatter_lines:
-            edge_scatter_lines = list(chain(*edge_scatter_lines))
-            edge_trace = go.Scatter(x=[xx[0] for xx in edge_scatter_lines], y=[xx[1] for xx in edge_scatter_lines],
-                                    mode='lines', showlegend=False, line=dict(color='black', width=1), hoverinfo=None,
-                                    hovertext=None, name='Transitions')
-            traces.insert(0, edge_trace)
-
-        fig = go.Figure(data=traces, layout=go.Layout(annotations=annotations,
-                                                      paper_bgcolor='rgba(0,0,0,0)',
-                                                      plot_bgcolor='rgba(0,0,0,0)'))
-
-        fig.update_xaxes({'showgrid': False,  # thin lines in the background
-                          'zeroline': False,  # thick line learn x=0
-                          'visible': False})
-        # 'fixedrange': True})  # numbers below)
-        fig.update_yaxes({'showgrid': False,  # thin lines in the background
-                          'zeroline': False,  # thick line learn x=0
-                          'visible': False})
-        # 'fixedrange': True})  # numbers below)
-        fig.update_annotations(standoff=marker_size / 2, startstandoff=marker_size / 2)
-        fig.update_layout(clickmode='event')
-        return fig
-
-    def view_graphviz(self, layout="dot", marker_size=20, node_positions=None, show_events=True, show_num_occur=False,
-                    show_state_label=True, font_size=10, plot_self_transitions=True, use_previos_node_positions=False,
-                    **kwargs):
-        graph = None
-        if node_positions is None:
-            if use_previos_node_positions:
-                node_positions = self.previous_node_positions
-            else:
-                g = self._G
-                graph = pdp.graph_from_edges([('"' + tr[0] + '"', '"' + tr[1] + '"') for tr in g.edges], directed=True)
-                for nnn in g.nodes:
-                    graph.add_node(pdp.Node(nnn, shape='point'))
-                graph.set_prog('dot')
-                graph = graph.create(format="dot")
-                graph = pdp.graph_from_dot_data(graph)
-                node_positions = {n.get_name().strip('"'): tuple(float(x) for x in n.get_pos()[1:-1].split(','))
-                                  for n in graph.get_nodes() if
-                                  n.get_name().strip('"') not in ['\\r\\n', 'node', 'graph']}
-            self.previous_node_positions = node_positions
-        node_x = []
-        node_y = []
-        for node in self._G.nodes:
-            x, y = node_positions[node]
-            node_x.append(x)
-            node_y.append(y)
-        texts = []
-        for v in self._G.nodes:
-            try:
-                texts.append(self.print_state(v))
-            except:
-                texts.append('Error printing state: ')
-
-        annotations = [dict(ax=node_positions[tr[0]][0], ay=node_positions[tr[0]][1], axref='x', ayref='y',
-                            x=node_positions[tr[1]][0], y=node_positions[tr[1]][1], xref='x', yref='y',
-                            showarrow=True, arrowhead=1, arrowsize=2) for tr in self._G.edges]
-        def fun(tr):
-            if show_events and show_num_occur:
-                return '<i>{} ({})</i>'.format(tr[2], self.num_occur(tr[0], tr[2]))
-            elif show_events:
-                return '<i>{}</i>'.format(tr[2])
-            elif show_num_occur:
-                return '<i>{}</i>'.format(self.num_occur(tr[0], tr[2]))
-
-        if show_num_occur or show_events:
-            annotations_text = [dict(x=(0.4 * node_positions[tr[0]][0] + 0.6 * node_positions[tr[1]][0]),
-                                     y=(0.4 * node_positions[tr[0]][1] + 0.6 * node_positions[tr[1]][1]),
-                                     xref='x', yref='y', text=fun(tr), font=dict(size=font_size, color='darkblue'),
-                                     yshift=0, showarrow=False)
-                                for tr in self.get_transitions() if plot_self_transitions or tr[0] != tr[1]]
-
-            annotations += annotations_text
-
-        graph = pdp.Dot(graph_type='digraph')
-        for tr in self._G.edges:
-            graph.add_edge(pdp.Edge('"' + tr[0] + '"', '"' + tr[1] + '"', label=tr[2]))
-        for nnn in self._G.nodes:
-            graph.add_node(pdp.Node(nnn, shape='box'))
-        return graph
-
-    def plot_transition(self, s, d):
-        trans = self.get_transition(s, d)
-        titles = '{0} -> {1} -> {2}'.format(trans[0], trans[2], trans[1])
-        fig = go.Figure()
-        fig.update_layout(title=trans[2], font=dict(size=6))
-        fig.add_annotation(
-            xref="x domain",
-            yref="y domain",
-            x=0.5,
-            y=0.9,
-            text= '{} -> {}'.format(trans[0], trans[1]))
-        v = trans[3]['timing']
-        fig.add_trace(go.Histogram(x=[o.total_seconds() for o in v],
-                                   name='Timings'))
-        return fig
-
-    def plot_state_transitions(self, state, obs=None):
-        trans = self.out_transitions(state)
-        titles = []
-        for k in trans:
-            titles.append('State: {0} -> {1} -> {2}'.format(k[0], k[2], k[1]))
-            titles.append('')
-
-        fig = subplots.make_subplots(len(trans), 2, shared_xaxes=True, shared_yaxes=True,
-                                     subplot_titles=titles, column_widths=[0.8, 0.2],
-                                     horizontal_spacing=0.02, vertical_spacing=0.2)
-        if obs is None:
-            raise NotImplemented()
-            # observations = self.get_transition_observations(state)
-
-        obs = obs[obs['State'] == state]
-        ind = 0
-        for k in trans:
-            v = obs[obs.q_next == k[1]]
-            ind += 1
-            ind_color = 0
-            if len(v) == 0:
-                continue
-            # v['VG'] = 'Unknown'
-            for vg, vv in v.groupby('Vergussgruppe'):
-                vv = vv.to_dict('records')
-                fig.add_trace(go.Histogram(y=[o['Timing'].total_seconds() for o in vv],
-                                           name=vg,
-                                           marker_color=DEFAULT_PLOTLY_COLORS[ind_color]), row=ind, col=2)
-                ind_color += 1
-            # Overlay both histograms
-            fig.update_layout(barmode='overlay')
-            # Reduce opacity to see both histograms
-            fig.update_traces(opacity=0.5, row=ind, col=2)
-
-            ind_color = 0
-            # v = pd.DataFrame(v)
-            v['Vergussgruppe'].fillna('Unknown', inplace=True)
-            v['Item'] = v['HID']
-            for vg, vv in v.groupby('Vergussgruppe'):
-                vv = vv.to_dict('records')
-                hovertext = [
-                    'Timing: {}s<br>Zähler: {}<br>ChipID: {}<br>Order: {}<br>VG: {}<br>ArtNr: {}'.format(o['Timing'],
-                                                                                                         o['Item'],
-                                                                                                         o['ChipID'],
-                                                                                                         o['Order'], o[
-                                                                                                             'Vergussgruppe'],
-                                                                                                         o['ArtNr'])
-                    for o in vv]
-                fig.add_trace(go.Scatter(x=[o['Timestamp'] for o in vv], y=[o['Timing'].total_seconds() for o in vv],
-                                         marker=dict(size=6, symbol="circle", color=DEFAULT_PLOTLY_COLORS[ind_color]),
-                                         name=vg,
-                                         mode="markers",
-                                         hovertext=hovertext), row=ind, col=1)
-                ind_color += 1
-            fig.update_xaxes(showticklabels=True, row=ind, col=1)
-        fig.update_layout(showlegend=False, margin=dict(b=0, t=30), width=800)
-        return fig
-
     def print_state(self, v):
         """Prints outgoing transitions of a state v.
 
@@ -810,7 +515,7 @@ class Automaton (CPSComponent):
 
         if current_q is None:
             if len(self.q0) == 0:
-                current_q = np.random.choice(list(self.states.keys()), 1)[-1]
+                current_q = np.random.choice(list(self.discrete_states.keys()), 1)[-1]
                 warnings.warn(
                     'Initial state not defined, sampling initial state uniformly from the set of all states.')
             else:
@@ -856,7 +561,7 @@ class Automaton (CPSComponent):
 
             last_q = current_q
             current_e = tr.event
-            self.apply_event(current_e)
+            self.apply_sim_event(current_e)
             if cont_time.size == 0:
                 break
             t += clock
@@ -887,11 +592,3 @@ class Automaton (CPSComponent):
                 prev_discr_state = discr_state
                 prev_time = time
         return data_collection
-
-
-def signal_vector_to_state(sig_vec):
-    return pprint.pformat(sig_vec, compact=True)
-
-
-def signal_vector_to_event(previous_vec, sig_vec):
-    return
