@@ -1,7 +1,6 @@
 """
     The module provides methods to visualize various kinds of data, such as time series or automata graphs.
 
-
     Authors:
     - Nemanja Hranisavljevic, hranisan@hsu-hh.de, nemanja@ai4cps.com
     - Tom Westermann, tom@hsu-hh.de, tom@ai4cps.com
@@ -269,8 +268,20 @@ def plot_stateflow(stateflow, color_mapping=None, state_col='State', bar_height=
     else:
         return traces
 
+
 def plot_cps_component(cps, id=None, node_labels=False, edge_labels=True, edge_font_size=6, edge_text_max_width=None,
                        output="dash"):
+    """
+
+    :param cps:
+    :param id:
+    :param node_labels:
+    :param edge_labels:
+    :param edge_font_size:
+    :param edge_text_max_width:
+    :param output:
+    :return:
+    """
     if id is None:
         id = "graph"
     nodes = []
@@ -432,7 +443,21 @@ def plot_cps(cps, node_labels=False, edge_labels=True, edge_font_size=6, edge_te
 def plot_cps_plotly(cps, layout="dot", marker_size=20, node_positions=None, show_events=True, show_num_occur=False,
                 show_state_label=True, font_size=10, plot_self_transitions=True, use_previos_node_positions=False,
                 **kwargs):
+    """
 
+    :param cps:
+    :param layout:
+    :param marker_size:
+    :param node_positions:
+    :param show_events:
+    :param show_num_occur:
+    :param show_state_label:
+    :param font_size:
+    :param plot_self_transitions:
+    :param use_previos_node_positions:
+    :param kwargs:
+    :return:
+    """
     # layout = 'kamada_kawai'  # TODO
     edge_scatter_lines = None
     annotations = []
@@ -560,6 +585,7 @@ def plot_cps_plotly(cps, layout="dot", marker_size=20, node_positions=None, show
     fig.update_layout(clickmode='event')
     return fig
 
+
 def view_graphviz(self, layout="dot", marker_size=20, node_positions=None, show_events=True, show_num_occur=False,
                 show_state_label=True, font_size=10, plot_self_transitions=True, use_previos_node_positions=False,
                 **kwargs):
@@ -619,6 +645,7 @@ def view_graphviz(self, layout="dot", marker_size=20, node_positions=None, show_
         graph.add_node(pdp.Node(nnn, shape='box'))
     return graph
 
+
 def plot_transition(self, s, d):
     trans = self.get_transition(s, d)
     titles = '{0} -> {1} -> {2}'.format(trans[0], trans[2], trans[1])
@@ -634,6 +661,7 @@ def plot_transition(self, s, d):
     fig.add_trace(go.Histogram(x=[o.total_seconds() for o in v],
                                name='Timings'))
     return fig
+
 
 def plot_state_transitions(self, state, obs=None):
     trans = self.out_transitions(state)
@@ -664,6 +692,7 @@ def plot_state_transitions(self, state, obs=None):
                                        name=vg,
                                        marker_color=DEFAULT_PLOTLY_COLORS[ind_color]), row=ind, col=2)
             ind_color += 1
+            
         # Overlay both histograms
         fig.update_layout(barmode='overlay')
         # Reduce opacity to see both histograms
@@ -695,6 +724,11 @@ def plot_state_transitions(self, state, obs=None):
 
 
 def plot_bipartite_graph(network):
+    """
+    Plots a bipartite graph of a network graph.
+    :param network: networkx network or a bi-adjacency matrix.
+    :return:
+    """
     if type(network) is np.array:
         # Iterate through each column (edge) of the bi-adjacency matrix
         edges = []
