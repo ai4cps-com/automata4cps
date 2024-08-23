@@ -3,10 +3,11 @@ from plotly import graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
 from plotly import colors as clr
-from sklearn.metrics import precision_score, confusion_matrix
+from sklearn.metrics import precision_score
 import torch
 from datetime import datetime
 import dash_cytoscape as cyto
+import pprint
 
 
 def remove_timestamps_without_change(data, sig_names):
@@ -130,153 +131,6 @@ def melt_dataframe(df, timestamp=None):
     result = pd.concat(changes).sort_values(by=[timestamp, 'variable']).reset_index(drop=True)
 
     return result
-
-
-def plot_data(data, title=None, timestamp=None, use_columns=None, discrete=False, height=None, plotStates=False,
-              limit_num_points=None, names=None, xaxis_title=None,
-              customdata=None, iterate_colors=True, y_title_font_size=14, opacity=1, vertical_spacing=0.005,
-              sharey=False, bounds=None, plot_only_changes=False, yAxisLabelOffset=False, marker_size=4,
-              showlegend=False, mode='lines+markers', **kwargs):
-    """
-    Plots all variables in the dataframe as subplots.
-
-    plotStates: if True, changes interpolation to 'hv', therefore keeping the last value
-    yAxisLabelOffset: if True, adds a offset to the plots y axis labels. Improves readability on long subplot names.
-    """
-
-    if limit_num_points is None or limit_num_points < 0:
-        limit_num_points = np.inf
-    if customdata is not None:
-        customdata = customdata.fillna('')
-    if type(data) is not list:
-        data = [data]
-
-    if len(data) == 0:
-        return None
-
-    # if not panda data frame
-    for i in range(len(data)):
-        if not isinstance(data[i], pd.DataFrame):
-            data[i] = pd.DataFrame(data[i])
-
-    # if no timestamp is in the data
-    if timestamp is not None:
-        if type(timestamp) == str or type(timestamp) == int:
-            for i in range(len(data)):
-                data[i] = data[i].set_index(timestamp)
-
-    if height is None:
-        height = max(800, len(data[0].columns) * 60)
-
-    if use_columns is None:
-        columns = data[0].columns
-    else:
-        columns = use_columns
-
-    fig = make_subplots(rows=len(columns), cols=1, shared_xaxes=True, vertical_spacing=vertical_spacing,
-                        shared_yaxes=sharey)
-
-    # select line_shape:
-    if plotStates is True:
-        lineShape = 'hv'
-    else:
-        lineShape = 'linear'
-
-    # Add traces
-    i = 0
-
-    for col_ind in range(len(columns)):
-        i += 1
-        k = -1
-        for trace_ind, d in enumerate(data):
-            col_name = columns[col_ind]
-            col = d.columns[col_ind]
-            if names:
-                trace_name = names[trace_ind]
-            else:
-                trace_name = str(trace_ind)
-            if use_columns is not None and col_name not in use_columns:
-                continue
-
-            hovertemplate = f"<b>Time:</b> %{{x}}<br><b>Event:</b> %{{y}}"
-            if customdata is not None:
-                hovertemplate += "<br><b>Context:</b>"
-                for ind, c in enumerate(customdata.columns):
-                    hovertemplate += f"<br>&nbsp;&nbsp;&nbsp;&nbsp;<em>{c}:</em> %{{customdata[{ind}]}}"
-
-            k += 1
-            if iterate_colors:
-                color = clr.DEFAULT_PLOTLY_COLORS[k % len(clr.DEFAULT_PLOTLY_COLORS)]
-            else:
-                color = clr.DEFAULT_PLOTLY_COLORS[0]
-
-            color = f'rgba{color[3:-1]}, {str(opacity)})'
-            if len(d.index.names) > 1:
-                t = d.index.get_level_values(d.index.names[-1]).to_numpy()
-            else:
-                t = d.index.to_numpy()
-            if d[col].dtype == tuple:
-                sig = d[col].astype(str).to_numpy()
-            else:
-                sig = d[col].to_numpy()
-            if discrete:
-                ind = min(limit_num_points, d.shape[0])
-                if plot_only_changes:
-                    ind = np.nonzero(np.not_equal(sig[0:ind - 1], sig[1:ind]))[0] + 1
-                    # sig = __d[col][0:min(limit_num_points, __d.shape[0])]
-                    ind = np.insert(ind, 0, 0)
-                    t = t[ind]
-                    sig = sig[ind]
-                    if customdata is not None:
-                        customdata = customdata[ind]
-                else:
-                    t = t[0:ind]
-                    sig = sig[0:ind]
-                    if customdata is not None:
-                        customdata = customdata[0:ind]
-
-                fig.add_trace(go.Scatter(x=t, y=sig, mode='markers',
-                                         name=trace_name, marker=dict(line_color=color, color=color,
-                                                                    line_width=2, size=marker_size),
-                                         customdata=customdata,
-                                         hovertemplate=hovertemplate, **kwargs), row=i, col=1)
-            else:
-                ind = min(limit_num_points, d.shape[0])
-                fig.add_trace(go.Scatter(x=t[0:ind], y=sig[0:ind], mode=mode, name=trace_name, customdata=customdata,
-                                         line=dict(color=color), line_shape=lineShape, **kwargs), row=i, col=1)
-            fig.update_yaxes(title_text=str(col_name), row=i, col=1, title_font=dict(size=y_title_font_size),
-                             categoryorder='category ascending')
-        if i % 2 == 0:
-            fig.update_yaxes(side="right", row=i, col=1)
-        if yAxisLabelOffset == True:
-            fig.update_yaxes(title_standoff=10 * i, row=i, col=1)
-        if xaxis_title is not None:
-            fig.update_xaxes(title=xaxis_title)
-        if bounds is not None:
-            upper_col = bounds[0].iloc[:, col_ind]
-            lower_vol = bounds[1].iloc[:, col_ind]
-            upper_bound = go.Scatter(
-                name='Upper Bound',
-                x=bounds[0].index.get_level_values(-1),
-                y=upper_col,
-                mode='lines',
-                marker=dict(color="#444"),
-                line=dict(width=0),
-                showlegend=False)
-            lower_bound = go.Scatter(
-                name='Lower Bound',
-                x=bounds[1].index.get_level_values(-1),
-                y=lower_vol,
-                marker=dict(color="#444"),
-                line=dict(width=0),
-                mode='lines',
-                fillcolor='rgba(68, 68, 68, 0.3)',
-                fill='tonexty',
-                showlegend=False)
-            fig.add_trace(upper_bound, row=i, col=1)
-            fig.add_trace(lower_bound, row=i, col=1)
-    fig.update_layout(title={'text': title, 'x': 0.5}, autosize=True, height=height + 180, showlegend=showlegend)
-    return fig
 
 
 def plot_execution_tree(graph, nodes_to_color, color, font_size=30):
@@ -487,6 +341,56 @@ def dict_to_df(d):
 def dict_to_csv(d, name="csv.csv"):
     max_rows = max(len(v) for v in d.values())
     pd.DataFrame({k: v + [None] * (max_rows - len(v)) for k, v in d.items()}).to_csv(name, sep=";", index=False)
+
+
+def data_list_to_dataframe(element, data, signal_names, prefix=None, last_var=None):
+    data = pd.DataFrame(data)
+    if data.shape[1] == 0:
+        return data
+    if signal_names is None:
+        signal_names = [prefix + str(i + 1) for i in range(len(data.columns) - 1)]
+        if last_var is not None and len(signal_names) > 0:
+            signal_names[-1] = last_var
+    else:
+        if last_var is not None:
+            signal_names += [last_var + str(i + 1) for i in range(len(data.columns) - len(signal_names) - 1)]
+    signal_names.insert(0, 'Time')
+
+    if len(data.columns) != len(signal_names):
+        raise Exception('Wrong number of column names: length of {} != {}'.format(signal_names, len(data.columns)))
+
+    data.columns = signal_names
+    data.set_index(data.columns[0], inplace=True)
+    if element is not None:
+        data.columns = element + '.' + data.columns
+    return data
+
+
+def flatten_dict_data(stateflow, reduce_keys_if_possible=True):
+    d = pd.json_normalize(stateflow).to_dict('records')[0]
+    if reduce_keys_if_possible:
+        for k in list(d.keys()):
+            k_new = k.split('.')[-1]
+            d[k_new] = d.pop(k)
+    return d
+
+
+def group_components(comp, *states):
+    if type(comp) is str:
+        return
+    res = ([k for k in comp if comp[k] == state]
+           for state in states)
+    if len(states) == 1:
+        res = next(res)
+        return res
+    else:
+        return tuple(res)
+
+def signal_vector_to_state(sig_vec):
+    return pprint.pformat(sig_vec, compact=True)
+
+def signal_vector_to_event(previous_vec, sig_vec):
+    return
 
 
 if __name__ == "__main__":
