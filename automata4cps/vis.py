@@ -3,7 +3,7 @@
 
     Authors:
     - Nemanja Hranisavljevic, hranisan@hsu-hh.de, nemanja@ai4cps.com
-    - Tom Westermann, tom@hsu-hh.de, tom@ai4cps.com
+    - Tom Westermann, tom.westermann@hsu-hh.de, tom@ai4cps.com
 """
 
 from plotly import graph_objects as go
@@ -692,7 +692,7 @@ def plot_state_transitions(self, state, obs=None):
                                        name=vg,
                                        marker_color=DEFAULT_PLOTLY_COLORS[ind_color]), row=ind, col=2)
             ind_color += 1
-            
+
         # Overlay both histograms
         fig.update_layout(barmode='overlay')
         # Reduce opacity to see both histograms
