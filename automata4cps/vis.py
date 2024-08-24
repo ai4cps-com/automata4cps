@@ -6,6 +6,7 @@
     - Tom Westermann, tom.westermann@hsu-hh.de, tom@ai4cps.com
 """
 
+from automata4cps.cps import CPSComponent, CPS
 from plotly import graph_objects as go
 import pandas as pd
 import datetime
@@ -270,7 +271,7 @@ def plot_stateflow(stateflow, color_mapping=None, state_col='State', bar_height=
 
 
 def plot_cps_component(cps, id=None, node_labels=False, edge_labels=True, edge_font_size=6, edge_text_max_width=None,
-                       output="dash"):
+                       output="cyto"):
     """
 
     :param cps:
@@ -368,12 +369,33 @@ def plot_cps_component(cps, id=None, node_labels=False, edge_labels=True, edge_f
     return network
 
 
-def plot_cps(cps, node_labels=False, edge_labels=True, edge_font_size=6, edge_text_max_width=None, output="dash"):
+def plot_cps(cps: CPS, node_labels=False, edge_labels=True, node_size=40, node_font_size=20, edge_font_size=16, edge_text_max_width=None, output="cyto",
+             dash_port=8050, **kwargs):
+    """
+    Plots all the components of a CPS in the same figure.
+    :param cps: CPS to plot.
+    :param node_labels: Should node labels be plotted.
+    :param edge_labels: Should edge labels be plotted.
+    :param node_size: What is the size of the nodes in the figure.
+    :param node_font_size: The font size of the node labels.
+    :param edge_font_size: The font size of the edge labels.
+    :param edge_text_max_width: Max width of the edge labels.
+    :param output: Should output be plotted as a dash.Cytoscape component ("cyto"), or should dash server be run
+    ("dash").
+    :param dash_port: If temporary dash server is run, what port to use.
+    :param kwargs: Other paramters are forwarded to the Cytoscape component.
+    :return:
+    """
     elements = dict(nodes=[], edges=[])
-    for comid, com in cps.com.items():
+
+
+    for comid, com in cps._com.items():
         els = plot_cps_component(com, output="elements")
+        elements['nodes'].append({'data': {'id': comid, 'label': comid}, 'classes': 'parent'})
         for x in els['nodes']:
             x['data']['group'] = comid
+            x['data']['parent'] = comid
+            x['data']['label'] = f"{x['data']['id']}"
             x['data']['id'] = f"{comid}-{x['data']['id']}"
         for x in els['edges']:
             x['data']['source'] = f"{comid}-{x['data']['source']}"
@@ -381,11 +403,11 @@ def plot_cps(cps, node_labels=False, edge_labels=True, edge_font_size=6, edge_te
         elements['nodes'] += els['nodes']
         elements['edges'] += els['edges']
 
-    node_style = {'width': 10,
-                  'height': 10}
+    node_style = {'width': node_size,
+                  'height': node_size}
     if node_labels:
-        node_style['label'] = 'data(id)'
-        node_style['font-size'] = 6
+        node_style['label'] = 'data(label)'
+        node_style['font-size'] = node_font_size
         node_style['text-wrap'] = 'wrap'
         node_style['text-max-width'] = 50
 
@@ -395,7 +417,7 @@ def plot_cps(cps, node_labels=False, edge_labels=True, edge_font_size=6, edge_te
         'target-arrow-shape': 'triangle',
         'target-arrow-size': 3,
         'width': 1,
-        'font-color': 'gray',
+        'font-color': 'black',
         'text-wrap': 'wrap',
         'font-size': edge_font_size,
         'text-max-width': edge_text_max_width
@@ -415,16 +437,27 @@ def plot_cps(cps, node_labels=False, edge_labels=True, edge_font_size=6, edge_te
 
     network = cyto.Cytoscape(
         id=cps.id,
-        layout={'name': 'cose', "fit": True},
+        # layout={'name': 'cose', "fit": True},
+        layout={
+            'name': 'cose',
+            'padding': 10,  # Padding around the graph layout
+            'nodeOverlap': 20,  # Adjust to reduce overlap
+            'nodeRepulsion': 100,  # Increase repulsion for better separation
+            'idealEdgeLength': 50,  # Increase edge length to spread nodes
+            'componentSpacing': 100,  # Spacing between disconnected components
+            'nodeDimensionsIncludeLabels': True,  # Include label sizes in layout
+            'nestingFactor': 0.7  # Factor to apply to compounds when calculating layout
+        },
         # layout={
         #     'id': 'breadthfirst',
         #     'roots': '[id = "initial"]'
         # },
-        maxZoom=2,
-        minZoom=0.5,
-        # style={'width': '100%', 'height': '600px'},
+        # maxZoom=2,
+        # minZoom=0.5,
+        # style={'width': '100%'},
         stylesheet=stylesheet,
-        elements=elements)
+        elements=elements, style={'width': '100%', 'height': '100vh'},
+        **kwargs)
 
     modal_state_data = dbc.Modal(children=[dbc.ModalHeader("Timings"),
                                            dbc.ModalBody(html.Div(children=[]))],
@@ -438,6 +471,34 @@ def plot_cps(cps, node_labels=False, edge_labels=True, edge_font_size=6, edge_te
         app.layout = html.Div(children=[network])
         app.run_server(mode='inline')
         return
+    if output == "dash":
+        app = Dash(__name__)
+        app.layout = html.Div(children=[network], style={'width': '100%',
+                                                         'height': '100vh',
+                                                         'margin': '0',
+                                                         'padding': '0'})
+
+
+        import time, webbrowser, threading
+
+        # Function to start the Dash server
+        def run_dash():
+            app.run_server(port=dash_port, debug=False, use_reloader=False)  # Start the Dash server
+
+        # Function to open the browser
+        def open_browser():
+            time.sleep(1)  # Give the server a second to start
+            webbrowser.open(f"http://127.0.0.1:{dash_port}/")  # Open the Dash app in the browser
+
+        # Start the Dash server in a separate thread
+        server_thread = threading.Thread(target=run_dash)
+        server_thread.daemon = True  # Allows the program to exit even if this thread is running
+        server_thread.start()
+
+        # Open the Dash app in the default browser
+        open_browser()
+        server_thread.join(timeout=1)
+
     return network
 
 def plot_cps_plotly(cps, layout="dot", marker_size=20, node_positions=None, show_events=True, show_num_occur=False,
