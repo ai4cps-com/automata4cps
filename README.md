@@ -35,7 +35,7 @@ A.view_plotly().show()
 To install Automata4CPS:
 
 ```
-pip install ...
+pip install git+https://github.com/ai4cps-com/automata4cps.git
 ```
 
 ## Data
