@@ -35,12 +35,14 @@
             
   <section id="module-automata4cps.automata">
 <span id="automata4cps-automata"></span><h1>automata4cps.automata<a class="headerlink" href="#module-automata4cps.automata" title="Link to this heading">¶</a></h1>
+<p>The module provides a class Automaton which inherits CPSComponent and implements the dynamics of different kinds of
+automata.</p>
 <p>Authors:
-Nemanja Hranisavljevic, <a class="reference external" href="mailto:hranisan&#37;&#52;&#48;hsu-hh&#46;de">hranisan<span>&#64;</span>hsu-hh<span>&#46;</span>de</a>, <a class="reference external" href="mailto:nemanja&#37;&#52;&#48;ai4cps&#46;com">nemanja<span>&#64;</span>ai4cps<span>&#46;</span>com</a>
-Tom Westermann, <a class="reference external" href="mailto:tom&#46;westermann&#37;&#52;&#48;hsu-hh&#46;de">tom<span>&#46;</span>westermann<span>&#64;</span>hsu-hh<span>&#46;</span>de</a>, <a class="reference external" href="mailto:tom&#37;&#52;&#48;ai4cps&#46;com">tom<span>&#64;</span>ai4cps<span>&#46;</span>com</a></p>
+- Nemanja Hranisavljevic, <a class="reference external" href="mailto:hranisan&#37;&#52;&#48;hsu-hh&#46;de">hranisan<span>&#64;</span>hsu-hh<span>&#46;</span>de</a>, <a class="reference external" href="mailto:nemanja&#37;&#52;&#48;ai4cps&#46;com">nemanja<span>&#64;</span>ai4cps<span>&#46;</span>com</a>
+- Tom Westermann, <a class="reference external" href="mailto:tom&#46;westermann&#37;&#52;&#48;hsu-hh&#46;de">tom<span>&#46;</span>westermann<span>&#64;</span>hsu-hh<span>&#46;</span>de</a>, <a class="reference external" href="mailto:tom&#37;&#52;&#48;ai4cps&#46;com">tom<span>&#64;</span>ai4cps<span>&#46;</span>com</a></p>
 <dl class="py class">
 <dt class="sig sig-object py" id="automata4cps.automata.Automaton">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">automata4cps.automata.</span></span><span class="sig-name descname"><span class="pre">Automaton</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">states</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">events</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transitions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unknown_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'raise'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_q</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.automata.Automaton" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">automata4cps.automata.</span></span><span class="sig-name descname"><span class="pre">Automaton</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">states</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">events</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transitions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unknown_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'raise'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_q</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">super_states</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decision_states</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.automata.Automaton" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="_autosummary/automata4cps.cps.CPSComponent.html#automata4cps.cps.CPSComponent" title="automata4cps.cps.CPSComponent"><code class="xref py py-class docutils literal notranslate"><span class="pre">CPSComponent</span></code></a></p>
 <p>Automaton class is the main class for modeling various kinds of hybrid systems.</p>
 <dl class="py method">
@@ -152,6 +154,11 @@ Tom Westermann, <a class="reference external" href="mailto:tom&#46;westermann&#3
 :return:</p>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="automata4cps.automata.Automaton.discrete_states">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">discrete_states</span></span><a class="headerlink" href="#automata4cps.automata.Automaton.discrete_states" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="automata4cps.automata.Automaton.flow">
 <span class="sig-name descname"><span class="pre">flow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">u</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.automata.Automaton.flow" title="Link to this definition">¶</a></dt>
@@ -176,6 +183,11 @@ Tom Westermann, <a class="reference external" href="mailto:tom&#46;westermann&#3
 </dd>
 </dl>
 </dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="automata4cps.automata.Automaton.get_alternatives">
+<span class="sig-name descname"><span class="pre">get_alternatives</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system_state</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.automata.Automaton.get_alternatives" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="automata4cps.automata.Automaton.get_num_in">
@@ -257,6 +269,11 @@ contains transitions where event is e.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="automata4cps.automata.Automaton.is_decision">
+<span class="sig-name descname"><span class="pre">is_decision</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overall_state</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.automata.Automaton.is_decision" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="automata4cps.automata.Automaton.is_deterministic">
 <span class="sig-name descname"><span class="pre">is_deterministic</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.automata.Automaton.is_deterministic" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -333,16 +350,6 @@ contains transitions where event is e.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="automata4cps.automata.Automaton.plot_state_transitions">
-<span class="sig-name descname"><span class="pre">plot_state_transitions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.automata.Automaton.plot_state_transitions" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="automata4cps.automata.Automaton.plot_transition">
-<span class="sig-name descname"><span class="pre">plot_transition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.automata.Automaton.plot_transition" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="automata4cps.automata.Automaton.predict_state">
 <span class="sig-name descname"><span class="pre">predict_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_collection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_col_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">discr_col_names</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.automata.Automaton.predict_state" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -415,14 +422,14 @@ contains transitions where event is e.</p>
 :return: generated data.</p>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="automata4cps.automata.Automaton.state">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">state</span></span><a class="headerlink" href="#automata4cps.automata.Automaton.state" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="automata4cps.automata.Automaton.state_is_deterministic">
 <span class="sig-name descname"><span class="pre">state_is_deterministic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">q</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.automata.Automaton.state_is_deterministic" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="automata4cps.automata.Automaton.states">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">states</span></span><a class="headerlink" href="#automata4cps.automata.Automaton.states" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -449,7 +456,7 @@ contains transitions where event is e.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="automata4cps.automata.Automaton.timed_transition">
-<span class="sig-name descname"><span class="pre">timed_transition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_observed_timings</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.automata.Automaton.timed_transition" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">timed_transition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_observed_timings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.automata.Automaton.timed_transition" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
@@ -462,32 +469,7 @@ contains transitions where event is e.</p>
 <span class="sig-name descname"><span class="pre">update_timing_boundaries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">newTiming</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.automata.Automaton.update_timing_boundaries" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="automata4cps.automata.Automaton.view_cytoscape">
-<span class="sig-name descname"><span class="pre">view_cytoscape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_font_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_text_max_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callback_app</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.automata.Automaton.view_cytoscape" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="automata4cps.automata.Automaton.view_graphviz">
-<span class="sig-name descname"><span class="pre">view_graphviz</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'dot'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marker_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_positions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_events</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_num_occur</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_state_label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">font_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_self_transitions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_previos_node_positions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.automata.Automaton.view_graphviz" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="automata4cps.automata.Automaton.view_plotly">
-<span class="sig-name descname"><span class="pre">view_plotly</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'dot'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marker_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_positions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_events</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_num_occur</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_state_label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">font_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_self_transitions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_previos_node_positions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.automata.Automaton.view_plotly" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="automata4cps.automata.signal_vector_to_event">
-<span class="sig-prename descclassname"><span class="pre">automata4cps.automata.</span></span><span class="sig-name descname"><span class="pre">signal_vector_to_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous_vec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig_vec</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.automata.signal_vector_to_event" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="automata4cps.automata.signal_vector_to_state">
-<span class="sig-prename descclassname"><span class="pre">automata4cps.automata.</span></span><span class="sig-name descname"><span class="pre">signal_vector_to_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sig_vec</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.automata.signal_vector_to_state" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
 
 <section id="classes">
 <h2>Classes<a class="headerlink" href="#classes" title="Link to this heading">¶</a></h2>

@@ -71,6 +71,11 @@
 <dd></dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="automata4cps.tools.data_list_to_dataframe">
+<span class="sig-prename descclassname"><span class="pre">automata4cps.tools.</span></span><span class="sig-name descname"><span class="pre">data_list_to_dataframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">element</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">signal_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">last_var</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.tools.data_list_to_dataframe" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="automata4cps.tools.dict_to_csv">
 <span class="sig-prename descclassname"><span class="pre">automata4cps.tools.</span></span><span class="sig-name descname"><span class="pre">dict_to_csv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'csv.csv'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.tools.dict_to_csv" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -111,8 +116,18 @@
 <dd></dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="automata4cps.tools.flatten_dict_data">
+<span class="sig-prename descclassname"><span class="pre">automata4cps.tools.</span></span><span class="sig-name descname"><span class="pre">flatten_dict_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stateflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reduce_keys_if_possible</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.tools.flatten_dict_data" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="automata4cps.tools.get_binary_cols">
 <span class="sig-prename descclassname"><span class="pre">automata4cps.tools.</span></span><span class="sig-name descname"><span class="pre">get_binary_cols</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.tools.get_binary_cols" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="automata4cps.tools.group_components">
+<span class="sig-prename descclassname"><span class="pre">automata4cps.tools.</span></span><span class="sig-name descname"><span class="pre">group_components</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">comp</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">states</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.tools.group_components" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
@@ -126,14 +141,6 @@
 <dd></dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="automata4cps.tools.plot_data">
-<span class="sig-prename descclassname"><span class="pre">automata4cps.tools.</span></span><span class="sig-name descname"><span class="pre">plot_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timestamp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_columns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">discrete</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotStates</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit_num_points</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xaxis_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">customdata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iterate_colors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_title_font_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">14</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opacity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertical_spacing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.005</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sharey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bounds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_only_changes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yAxisLabelOffset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marker_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showlegend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'lines+markers'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.tools.plot_data" title="Link to this definition">¶</a></dt>
-<dd><p>Plots all variables in the dataframe as subplots.</p>
-<p>plotStates: if True, changes interpolation to ‘hv’, therefore keeping the last value
-yAxisLabelOffset: if True, adds a offset to the plots y axis labels. Improves readability on long subplot names.</p>
-</dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="automata4cps.tools.plot_execution_tree">
 <span class="sig-prename descclassname"><span class="pre">automata4cps.tools.</span></span><span class="sig-name descname"><span class="pre">plot_execution_tree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes_to_color</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">font_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.tools.plot_execution_tree" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -143,6 +150,16 @@ yAxisLabelOffset: if True, adds a offset to the plots y axis labels. Improves re
 <span class="sig-prename descclassname"><span class="pre">automata4cps.tools.</span></span><span class="sig-name descname"><span class="pre">remove_timestamps_without_change</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig_names</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.tools.remove_timestamps_without_change" title="Link to this definition">¶</a></dt>
 <dd><p>Removes timestamps where no values changed in comparison to the previous timestamp.</p>
 </dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="automata4cps.tools.signal_vector_to_event">
+<span class="sig-prename descclassname"><span class="pre">automata4cps.tools.</span></span><span class="sig-name descname"><span class="pre">signal_vector_to_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous_vec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig_vec</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.tools.signal_vector_to_event" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="automata4cps.tools.signal_vector_to_state">
+<span class="sig-prename descclassname"><span class="pre">automata4cps.tools.</span></span><span class="sig-name descname"><span class="pre">signal_vector_to_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sig_vec</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#automata4cps.tools.signal_vector_to_state" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="automata4cps.tools.split_data_on_signal_value">
