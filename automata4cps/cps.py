@@ -127,11 +127,18 @@ class CPS:
                     return c
         return None
 
+    def get_component_by_full_id(self, full_id):
+        ids = full_id.split('.')
+        c = self
+        for ii in ids:
+            c = c[ii]
+        return c
+
     def get_execution_data(self, flat=False):
-        exe_data = {}
+        exe_data = OrderedDict()
         if flat:
             for c in self.get_all_components():
-                exe_data[c.id] = c.get_execution_data()
+                exe_data[c.full_id] = c.get_execution_data()
         else:
             for k, c in self.com.items():
                 exe_data[c.id] = c.get_execution_data()
@@ -182,6 +189,15 @@ class CPSComponent(PythonModel):
         self._blocked_states = blocked_states
 
     @property
+    def full_id(self):
+        full_id = self.id
+        s = self.parent_system
+        while s.parent_system:
+            full_id = s.id + "." + full_id
+            s = s.parent_system
+        return full_id
+
+    @property
     def overall_system(self):
         s = self.parent_system
         while s.parent_system:
@@ -221,7 +237,7 @@ class CPSComponent(PythonModel):
         self._discrete_output_data = []
 
     def get_execution_data(self):
-        data = pd.DataFrame(self._discrete_state_data, columns=['Timestamp', 'Finish', 'State', 'Event'] + list(self._p.keys()))
+        data = pd.DataFrame(self._discrete_state_data) #, columns=['Timestamp', 'Finish', 'State', 'Event'] + list(self._p.keys()))
         data['Finish'] = data['Timestamp'].shift(-1)
         data['Duration'] = pd.to_timedelta(data['Finish'] - data['Timestamp']).dt.total_seconds()
         return data
