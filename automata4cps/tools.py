@@ -1,8 +1,9 @@
+"""
+    Various methods to transform data.
+"""
+
 import pandas as pd
-from plotly import graph_objects as go
-from plotly.subplots import make_subplots
 import numpy as np
-from plotly import colors as clr
 from sklearn.metrics import precision_score
 import torch
 from datetime import datetime
@@ -107,6 +108,7 @@ def get_binary_cols(df):
     binary_columns = [col for col in df.columns if set(df[col].unique()).issubset({0, 1})]
     return binary_columns
 
+
 def melt_dataframe(df, timestamp=None):
     if timestamp is None:
         timestamp = df.columns[0]
@@ -131,97 +133,6 @@ def melt_dataframe(df, timestamp=None):
     result = pd.concat(changes).sort_values(by=[timestamp, 'variable']).reset_index(drop=True)
 
     return result
-
-
-def plot_execution_tree(graph, nodes_to_color, color, font_size=30):
-    # The function plots system execution in form of a graph, where horizontal position of the nodes corresponds to the
-    # node's timestamp. The tree branches vertically.
-
-    # for ntd in nodes_to_delete:
-    #     if ntd in graph:
-    #         prenodes = list(graph.predecessors(ntd))
-    #         sucnodes = list(graph.successors(ntd))
-    #         preedges = list(graph.in_edges(ntd))
-    #         sucedges = list(graph.out_edges(ntd))
-    #         edgestodelete = preedges + sucedges
-    #         if ((len(preedges) > 0) and (len(sucedges) > 0)):
-    #             for prenode in prenodes:
-    #                 for sucnode in sucnodes:
-    #                     graph.add_edge(prenode, sucnode)
-    #         if (len(edgestodelete) > 0):
-    #             graph.remove_edges_from(edgestodelete)
-
-    startstring = list(graph.nodes)[0]
-    arr_elements = []
-    num_of_nodes = graph.number_of_nodes()
-    # vertical_height = num_of_states
-    visited = set()
-    stack = [startstring]
-    while stack:
-        node = stack.pop()
-        if node not in visited:
-            elemid = str(node)
-            elemlabel = graph.nodes[node].get('label')
-            datepos1 = datetime.strptime(startstring, "%d/%m/%Y, %H:%M:%S")
-            datepos2 = datetime.strptime(node, "%d/%m/%Y, %H:%M:%S")
-            nodeweight = graph.nodes[node].get('weight')
-            ypos = 0
-            if nodeweight == 0:
-                ypos = num_of_states * 100
-            else:
-                ypos = (nodeweight - 1) * 200
-            element = {
-                'data': {
-                    'id': elemid,
-                    'label': elemlabel
-                },
-                'position': {
-                    'x': (datepos2 - datepos1).total_seconds() / 7200,
-                    'y': ypos
-                },
-                # 'locked': True
-            }
-            arr_elements.append(element)
-            visited.add(node)
-            stack.extend(neighbor for neighbor in graph.successors(node) if neighbor not in visited)
-    for u, v in list(graph.edges):
-        edge_element = {
-            'data': {
-                'source': u,
-                'target': v
-            }
-        }
-        arr_elements.append(edge_element)
-
-
-    colorcode = ['gray'] * num_of_nodes
-    for n in nodes_to_color:
-        if n in graph:
-            n_ind = list(graph.nodes).index(n)
-            if (n_ind < num_of_nodes):
-                colorcode[n_ind] = color
-    new_stylesheet = []
-    for i in range(0, num_of_nodes):
-        new_stylesheet.append({
-            'selector': f'node[id = "{list(graph.nodes)[i]}"]',
-            'style': {
-                'font-size': f'{font_size}px',
-                'content': 'data(label)',
-                'background-color': colorcode[i],
-                'text-valign': 'top',
-                'text-halign': 'center',
-                # 'animate': True
-            }
-        })
-
-    cytoscapeobj = cyto.Cytoscape(
-        id='org-chart',
-        layout={'name': 'preset'},
-        style={'width': '2400px', 'height': '1200px'},
-        elements=arr_elements,
-        stylesheet=new_stylesheet
-    )
-    return cytoscapeobj
 
 
 def compute_purity(cluster_assignments, class_assignments):
@@ -330,7 +241,7 @@ def encode_nominal_list_df(dfs, columns=None, categories=None):
         categories = dict.fromkeys(columns)
         for c in columns:
             categories[c] = np.sort(list(np.unique(np.concatenate([df[c].unique() for df in dfs]))))
-    return [encode_nominal(x, columns, categories=categories) for x in dfs]
+    return [encode_nominal(x, columns, categories=categories)[0] for x in dfs]
 
 
 def dict_to_df(d):
@@ -386,8 +297,10 @@ def group_components(comp, *states):
     else:
         return tuple(res)
 
+
 def signal_vector_to_state(sig_vec):
     return pprint.pformat(sig_vec, compact=True)
+
 
 def signal_vector_to_event(previous_vec, sig_vec):
     return
