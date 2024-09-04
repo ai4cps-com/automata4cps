@@ -248,12 +248,8 @@ class CPS:
         print('Simulation finished.')
         return stateflow_data, discr_output_data, cont_state_data, cont_output_data, env.now, decisions
 
-<<<<<<< Updated upstream
-class CPSComponent(PythonModel):
-=======
 
 class CPSComponent(PythonModel, sim.Simulator):
->>>>>>> Stashed changes
     """
     General hybrid system class based on scipy and simpy.
     """
@@ -311,7 +307,7 @@ class CPSComponent(PythonModel, sim.Simulator):
 
     @property
     def overall_system(self):
-        s = self.parent_system
+        s = self
         while s.parent_system:
             s = s.parent_system
         return s
@@ -387,7 +383,8 @@ class CPSComponent(PythonModel, sim.Simulator):
             try:
                 if len(self._xt)>0: # there is time-continuous state variable
                     self.__step_continuous(t, *self.state)
-
+            except:
+                raise Exception('Exception during self.timed_transition in state {}'.format(self._q))
 
 
             if event_delay is not None:
@@ -396,8 +393,6 @@ class CPSComponent(PythonModel, sim.Simulator):
             continue
 
             # 2. IF NOT TIMED
-            try:
-
 
             # 2. IF NO TIMED EVENT -> BLOCK EVENT
             if time is None:
@@ -480,12 +475,7 @@ class CPSComponent(PythonModel, sim.Simulator):
         self._discrete_output_data = []
 
     def get_execution_data(self):
-<<<<<<< Updated upstream
         data = pd.DataFrame(self._discrete_state_data) #, columns=['Timestamp', 'Finish', 'State', 'Event'] + list(self._p.keys()))
-=======
-        data = pd.DataFrame(self._discrete_state_data,
-                            columns=['Timestamp', 'Finish', 'State', 'Event'] + list(self._p.keys()))
->>>>>>> Stashed changes
         data['Finish'] = data['Timestamp'].shift(-1)
         data['Duration'] = pd.to_timedelta(data['Finish'] - data['Timestamp']).dt.total_seconds()
         return data
@@ -630,3 +620,7 @@ class CPSComponent(PythonModel, sim.Simulator):
 
     def get_decision_state(self, state, overall_state):
         return state
+
+
+if __name__ == '__main__':
+    pass
