@@ -271,7 +271,7 @@ def plot_stateflow(stateflow, color_mapping=None, state_col='State', bar_height=
 
 
 def plot_cps_component(cps, id=None, node_labels=False, edge_labels=True, edge_font_size=6, edge_text_max_width=None,
-                       output="cyto"):
+                       node_size=10, output="cyto"):
     """
 
     :param cps:
@@ -308,8 +308,8 @@ def plot_cps_component(cps, id=None, node_labels=False, edge_labels=True, edge_f
     if output == "elements":
         return elements
 
-    node_style = {'width': 10,
-                  'height': 10}
+    node_style = {'width': node_size,
+                  'height': node_size}
     if node_labels:
         node_style['label'] = 'data(id)'
         node_style['font-size'] = 6
@@ -388,8 +388,7 @@ def plot_cps(cps: CPS, node_labels=False, edge_labels=True, node_size=40, node_f
     """
     elements = dict(nodes=[], edges=[])
 
-
-    for comid, com in cps._com.items():
+    for comid, com in cps.com.items():
         els = plot_cps_component(com, output="elements")
         elements['nodes'].append({'data': {'id': comid, 'label': comid}, 'classes': 'parent'})
         for x in els['nodes']:
@@ -724,11 +723,11 @@ def plot_transition(self, s, d):
     return fig
 
 
-def plot_state_transitions(self, state, obs=None):
-    trans = self.out_transitions(state)
+def plot_state_transitions(ta, state, obs=None):
+    trans = ta.out_transitions(state)
     titles = []
     for k in trans:
-        titles.append('State: {0} -> {1} -> {2}'.format(k[0], k[2], k[1]))
+        titles.append('State: {0} -> {1} -> {2}'.format(k[0], k[3]['event'], k[1]))
         titles.append('')
 
     fig = subplots.make_subplots(len(trans), 2, shared_xaxes=True, shared_yaxes=True,
@@ -747,9 +746,18 @@ def plot_state_transitions(self, state, obs=None):
         if len(v) == 0:
             continue
         # v['VG'] = 'Unknown'
+        if 'Vergussgruppe' in v:
+            v['Vergussgruppe'] = v['Vergussgruppe'].fillna('Unknown')
+        else:
+            v['Vergussgruppe'] = 'Unknown'
+
+        v['Order'] = 'Unknown'
+        v['ChipID'] = 'Unknown'
+        v['Item'] = 'Unknown'
+        v['ArtNr'] = 'Unknown'
         for vg, vv in v.groupby('Vergussgruppe'):
             vv = vv.to_dict('records')
-            fig.add_trace(go.Histogram(y=[o['Timing'].total_seconds() for o in vv],
+            fig.add_trace(go.Histogram(y=[o['Duration'] for o in vv],
                                        name=vg,
                                        marker_color=DEFAULT_PLOTLY_COLORS[ind_color]), row=ind, col=2)
             ind_color += 1
@@ -761,26 +769,26 @@ def plot_state_transitions(self, state, obs=None):
 
         ind_color = 0
         # v = pd.DataFrame(v)
-        v['Vergussgruppe'].fillna('Unknown', inplace=True)
+
         v['Item'] = v['HID']
         for vg, vv in v.groupby('Vergussgruppe'):
             vv = vv.to_dict('records')
             hovertext = [
-                'Timing: {}s<br>Zähler: {}<br>ChipID: {}<br>Order: {}<br>VG: {}<br>ArtNr: {}'.format(o['Timing'],
+                'Timing: {}s<br>Zähler: {}<br>ChipID: {}<br>Order: {}<br>VG: {}<br>ArtNr: {}'.format(o['Duration'],
                                                                                                      o['Item'],
                                                                                                      o['ChipID'],
                                                                                                      o['Order'],
                                                                                                      o['Vergussgruppe'],
                                                                                                      o['ArtNr'])
                 for o in vv]
-            fig.add_trace(go.Scatter(x=[o['Timestamp'] for o in vv], y=[o['Timing'].total_seconds() for o in vv],
+            fig.add_trace(go.Scatter(x=[o['Timestamp'] for o in vv], y=[o['Duration'] for o in vv],
                                      marker=dict(size=6, symbol="circle", color=DEFAULT_PLOTLY_COLORS[ind_color]),
                                      name=vg,
                                      mode="markers",
                                      hovertext=hovertext), row=ind, col=1)
             ind_color += 1
         fig.update_xaxes(showticklabels=True, row=ind, col=1)
-    fig.update_layout(showlegend=False, margin=dict(b=0, t=30), width=800)
+    fig.update_layout(showlegend=False, margin=dict(b=0, t=30), width=1200)
     return fig
 
 
