@@ -145,7 +145,6 @@ class CPS:
         return exe_data
 
 
-
 class CPSComponent(PythonModel):
     """
     General hybrid system class based on scipy and simpy.
