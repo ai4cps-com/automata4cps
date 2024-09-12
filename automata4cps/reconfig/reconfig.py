@@ -3,16 +3,15 @@ CPS reconfiguration is a process of finding a configuration that will bring/main
 """
 import networkx as nx
 
+
 class Reconfigurator:
+    """
+
+    """
     def __init__(self, system_model):
         self.system_model = system_model
 
     def reconfigure(self, state):
-        pass
-
-
-class QSM:
-    def calculate(self):
         pass
 
 

@@ -11,11 +11,17 @@ import dash_cytoscape as cyto
 import pprint
 
 
-def remove_timestamps_without_change(data, sig_names):
+def remove_timestamps_without_change(data, sig_names=None):
     """Removes timestamps where no values changed in comparison to the previous timestamp."""
+
     new_data = []
     for d in data:
-        ind = (d[sig_names].diff() != 0).any(axis=1)
+        d = pd.DataFrame(d)
+        if sig_names is None:
+            sig = d.columns
+        else:
+            sig = sig_names
+        ind = (d[sig].diff() != 0).any(axis=1)
         dd = d.loc[ind]
         new_data.append(dd.copy(deep=True))
     return new_data
@@ -304,6 +310,34 @@ def signal_vector_to_state(sig_vec):
 
 def signal_vector_to_event(previous_vec, sig_vec):
     return
+
+
+def generate_random_walk(start_values, steps=100):
+    """
+    Generates a random walk process for multiple variables.
+
+    Parameters:
+    - start_values (list): A list of starting values for each variable.
+    - steps (int): Number of steps in the random walk.
+
+    Returns:
+    - pd.DataFrame: DataFrame containing the random walk process for each variable.
+    """
+    num_variables = len(start_values)
+
+    # Generate random steps (Normal distribution with mean=0, std=1)
+    random_steps = np.random.normal(loc=0, scale=1, size=(steps, num_variables))
+
+    # Initialize the DataFrame with the start values
+    random_walk = pd.DataFrame([start_values], columns=[f'Var_{i + 1}' for i in range(num_variables)])
+
+    # Generate the random walk by cumulative sum of the random steps
+    for i in range(steps):
+        new_row = random_walk.iloc[-1].values + random_steps[i]
+        new_row_df = pd.DataFrame([new_row], columns=random_walk.columns)
+        random_walk = pd.concat([random_walk, new_row_df], ignore_index=True)
+
+    return random_walk
 
 
 if __name__ == "__main__":

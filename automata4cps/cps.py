@@ -95,6 +95,10 @@ class CPS:
         self._com[key] = value
         self._parent_system[value] = self
 
+    # Method to get components as in dict.
+    def items(self):
+        return self._com.items()
+
     @property
     def state(self):
         return {k: x.state for k, x in self._com.items()}
@@ -211,8 +215,6 @@ class CPS:
         print('Simulation started: ')
 
         for s in self.get_all_components():
-            if not s._q:
-                s._q = np.random.choice(list(s.q0.keys()))
             env.process(s.simulation_process_simpy(env, finish_time, verbose))
 
         env.run(until=finish_time)
@@ -246,7 +248,7 @@ class CPS:
                 print_exc()
                 warnings.warn('Simulation failed.')
         print('Simulation finished.')
-        return stateflow_data, discr_output_data, cont_state_data, cont_output_data, env.now, decisions
+        return stateflow_data, discr_output_data, cont_state_data, cont_output_data, env.now
 
 
 class CPSComponent(PythonModel, sim.Simulator):
@@ -356,7 +358,9 @@ class CPSComponent(PythonModel, sim.Simulator):
         self._continuous_state_data = [[env.now, *self._xt, *self._xk]]
         self._continuous_output_data = [[env.now, *self._y]]
         self._discrete_state_data = []
-        self._discrete_state_data.append(dict(Timestamp=env.now, State=self._q, Finish=None, **self._p))
+        discr_state = dict(zip(self.discrete_state_names, self._q))
+        self._discrete_state_data.append(
+            dict(Timestamp=env.now, Finish=None, **discr_state, **self._p))
         self._discrete_output_data = []
 
         while True:
@@ -375,27 +379,13 @@ class CPSComponent(PythonModel, sim.Simulator):
             # DETERMINE THE NEXT EVENT
             # 1. CHECK IF TIMED EVENT
             try:
-                event_delay, new_state_value = self.timed_event(t, self.state)
+                event_delay, new_state_value = self.timed_event(*self.state)
             except Exception as ex:
                 print(f"{self.id}: Exception during self.timed_transition in state {self._q}")
                 raise ex
 
-            try:
-                if len(self._xt)>0: # there is time-continuous state variable
-                    self.__step_continuous(t, *self.state)
-            except:
-                raise Exception('Exception during self.timed_transition in state {}'.format(self._q))
-
-
-            if event_delay is not None:
-                yield env.timeout(event_delay)
-            self.state = new_state_value
-            continue
-
-            # 2. IF NOT TIMED
-
-            # 2. IF NO TIMED EVENT -> BLOCK EVENT
-            if time is None:
+            # 2. IF NOT TIMED THEN WAIT
+            if event_delay is None:
                 if verbose:
                     print('{}: Waiting in: {}'.format(self.id, self._q))
                 if self._block_event is None:
@@ -404,33 +394,43 @@ class CPSComponent(PythonModel, sim.Simulator):
                     yield self._block_event
                 else:
                     raise Exception("{}: State: {}. Exception during block event.".format(self.id, self._q))
+                new_state_value = self._block_event['data']
                 self._block_event = None
-         # The one who unblocks must set the ._e
+            else:
+                yield env.timeout(event_delay)
+
+
+            try:
+                if len(self._xt) > 0: # there is time-continuous state variable
+                    self.__step_continuous(*self.state)
+            except Exception as ex:
+                print_exc()
+                raise Exception('Exception during self.timed_transition in state {}'.format(self._q))
+
+            if event_delay is not None:
+                yield
+            self.state = new_state_value
 
             # EXECUTE THE NEXT EVENT
             if verbose:
                 print('--------------------')
-            old_q = self._q
+            self._q = new_state_value
             try:
-                self._q, self._xt, self._xk = \
-                    self.discrete_event_dynamics(self._q, self._xt, self._xk, self._p)
-
                 self.on_entry(self._q, self._p)
-                # self._d, self._y = self.o(self.x, 0, self._xt, self._xk, self._u, self._p)
             except Exception as ex:
                 print(f"{self.id}: Exception during discrete event dynamics '{old_q}'->")
                 raise ex
 
-            # self._p = self.context(self._past_t, self._past_p, env.now)
             self._past_t.append(env.now)
             self._past_p.append(self._p)
             self._discrete_state_data[-1]['Finish'] = env.now
+            discr_state = dict(zip(self.discrete_state_names, self._q))
             self._discrete_state_data.append(
-                dict(Timestamp=env.now, State=self._q, Finish=None, **self._p))
+                dict(Timestamp=env.now, Finish=None, **discr_state, **self._p))
             self._discrete_output_data.append([env.now, *self._d])
 
             if verbose:
-                print('{}: Time: {} Event: {} State: {}'.format(self.id, env.now, self._q))
+                print('{}: Time: {} State: {}'.format(self.id, env.now, self._q))
             continue
 
             if self._xt is not None:
@@ -460,33 +460,27 @@ class CPSComponent(PythonModel, sim.Simulator):
         pass
 
     def reinitialize(self, t, state=None):
-        self._p = self.context(self._q, None, None, 0)
         if state is not None:
             self.state = state
 
+        self._p = self.context(self._q, None, None, 0)
         self._u = self.input(self._q, 0)
         self._past_t = [t]
         self._past_p = [self._p]
         # self.output(self._q, 0, self._xt, self._xk, self._u, self._p)
         self._continuous_state_data = []
         self._continuous_output_data = []
-        self._discrete_state_data = []
-        self._discrete_state_data.append(dict(Timestamp=t, State=self._q, **self._p))
+        discr_state =  dict(zip(self.discrete_state_names, self._q))
+        self._discrete_state_data = [dict(Timestamp=t, **discr_state, **self._p)]
         self._discrete_output_data = []
+        self._block_event = None
+        self._pending_events = []
 
     def get_execution_data(self):
         data = pd.DataFrame(self._discrete_state_data) #, columns=['Timestamp', 'Finish', 'State', 'Event'] + list(self._p.keys()))
         data['Finish'] = data['Timestamp'].shift(-1)
         data['Duration'] = pd.to_timedelta(data['Finish'] - data['Timestamp']).dt.total_seconds()
         return data
-
-    def discrete_event_dynamics(self, previous_q, e, xt, xk, p) -> tuple:
-        """
-        The function updates system state given the event e.
-        :param event:
-        :return:
-        """
-        pass
 
     def update_input(self, u):  # Set i if you want from outside
         self._u = u
@@ -525,7 +519,7 @@ class CPSComponent(PythonModel, sim.Simulator):
     def invariants(self, q, clock, xc, xd, y):
         pass
 
-    def timed_event(self, t, q, xc, xd):
+    def timed_event(self, q, xc, xd):
         """
         Calculates if and when the next time event will happen and the new state values.
         :param t: Current time.

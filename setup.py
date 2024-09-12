@@ -2,12 +2,12 @@ from setuptools import setup, find_packages
 
 setup(
     name="automata4cps",
-    version="0.1.12",
+    version="0.1.14",
     packages=find_packages(),
     install_requires=[
         # List your project's dependencies here, for example:
         'dash', 'pandas', 'networkx', 'plotly', 'numpy', 'dash_daq', 'dash-bootstrap-components', 'pydotplus',
-        'dash-cytoscape', 'simpy', 'mlflow', 'torch', 'z3', 'scipy', 'sphinx', 'matplotlib'
+        'dash-cytoscape', 'simpy', 'mlflow', 'torch', 'z3-solver', 'scipy', 'sphinx', 'matplotlib', 'scikit-learn'
     ],
     author="Nemanja Hranisavljevic & Tom Westermann",
     author_email="nemanja@ai4cps.com",
@@ -18,5 +18,5 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.6, <=3.7',
 )

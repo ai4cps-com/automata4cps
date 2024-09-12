@@ -66,6 +66,10 @@ class Automaton (CPSComponent):
                 else:
                     self._G.add_edge(tr[0], tr[2], event=tr[1])
 
+        if 'discr_state_names' not in kwargs:
+            kwargs['discr_state_names'] = ['Mode']
+        elif type(kwargs['discr_state_names']) is str:
+            kwargs['discr_state_names'] = [kwargs['discr_state_names']]
         CPSComponent.__init__(self, id, **kwargs)
 
     @property
@@ -86,6 +90,8 @@ class Automaton (CPSComponent):
         Automata discrete state is uni-variate.
         :return:
         """
+        if len(self._q) < 1:
+            raise Exception(f"State of {self.id} is empty.")
         return self._q[0], self._xt, self._xk
 
     @state.setter
@@ -362,7 +368,7 @@ class Automaton (CPSComponent):
                 new_q = dests.pop()
         return new_q, None, None
 
-    def timed_event(self, q, xc, xd, y, use_observed_timings=False):
+    def timed_event(self, q, xc, xd):
         possible_destinations = list(ev for s, d, ev in self._G.out_edges(q, data=True) if s == q)
         if possible_destinations:
             if len(possible_destinations) == 1:
