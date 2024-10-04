@@ -11,6 +11,59 @@ import dash_cytoscape as cyto
 import pprint
 
 
+def standardize(self, x, fit=False):
+    if type(x) is list:
+        if fit:
+            all_x = torch.vstack(x)
+            self._mean = all_x.mean(dim=0)
+            self._std = all_x.std(dim=0)
+
+        return [(xx - self._mean) / self._std for xx in x]
+    else:
+        if fit:
+            self._mean = x.mean(dim=0)
+            self._std = x.std(dim=0)
+        return (x - self._mean) / self._std
+
+
+def window(self, x):
+    if type(x) is list:
+        return [self._window(xx) for xx in x]
+    else:
+        return x.unfold(dimension=0, size=self.window_size, step=self.window_step)
+
+
+def extend_derivative(signals, use_derivatives=(0, 1)): # Can be torch also
+    if type(use_derivatives) is not list and type(use_derivatives) is not tuple:
+        use_derivatives = [use_derivatives]
+    if type(signals) is list:
+        return [extend_derivative(x, use_derivatives=use_derivatives) for x in signals]
+    else:
+        if type(signals) is pd.DataFrame:
+            signals = torch.from_numpy(signals.values)
+
+        new_signals = [signals]
+        for ord in range(0, max(use_derivatives)):
+            # Initialize a tensor to hold the derivatives, same shape as the input
+            derivatives = torch.zeros_like(signals)
+
+            # Use central differences for the interior points
+            derivatives[1:-1, :] = (signals[2:, :] - signals[:-2, :]) / 2
+
+            # Use forward difference for the first point
+            derivatives[0, :] = signals[1, :] - signals[0, :]
+
+            # Use backward difference for the last point
+            derivatives[-1, :] = signals[-1, :] - signals[-2, :]
+
+            new_signals.append(derivatives)
+            signals = derivatives
+
+        new_signals = [new_signals[i] for i in use_derivatives]
+        new_signals = torch.hstack(new_signals)
+    return new_signals
+
+
 def remove_timestamps_without_change(data, sig_names=None):
     """Removes timestamps where no values changed in comparison to the previous timestamp."""
 
@@ -261,6 +314,8 @@ def dict_to_csv(d, name="csv.csv"):
 
 
 def data_list_to_dataframe(element, data, signal_names, prefix=None, last_var=None):
+    if signal_names is not None:
+        signal_names = signal_names.copy()
     data = pd.DataFrame(data)
     if data.shape[1] == 0:
         return data
