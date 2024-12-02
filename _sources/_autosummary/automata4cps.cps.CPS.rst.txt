@@ -15,12 +15,14 @@
    
       ~CPS.__init__
       ~CPS.get_all_components
-      ~CPS.get_choice_state
       ~CPS.get_component
+      ~CPS.get_component_by_full_id
       ~CPS.get_components
       ~CPS.get_execution_data
+      ~CPS.items
+      ~CPS.reinitialize
       ~CPS.set_child_component
-      ~CPS.stop_condition
+      ~CPS.simulate
    
    
 
@@ -31,6 +33,7 @@
    .. autosummary::
    
       ~CPS.overall_system
+      ~CPS.parent_system
       ~CPS.state
    
    

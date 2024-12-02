@@ -14,27 +14,31 @@
    .. autosummary::
    
       ~CPSComponent.__init__
-      ~CPSComponent.apply_event
+      ~CPSComponent.apply_sim_event
       ~CPSComponent.context
-      ~CPSComponent.discrete_event_dynamics
       ~CPSComponent.finish
       ~CPSComponent.finish_condition
+      ~CPSComponent.get_alternatives
+      ~CPSComponent.get_decision_state
       ~CPSComponent.get_execution_data
       ~CPSComponent.get_sim_state
       ~CPSComponent.input
       ~CPSComponent.invariants
+      ~CPSComponent.is_decision
       ~CPSComponent.load_context
       ~CPSComponent.on_entry
       ~CPSComponent.output
       ~CPSComponent.predict
       ~CPSComponent.predict_stream
-      ~CPSComponent.react
       ~CPSComponent.read_event
+      ~CPSComponent.reinitialize
       ~CPSComponent.set_sim_state
-      ~CPSComponent.start
+      ~CPSComponent.simulate
+      ~CPSComponent.simulation_process_simpy
+      ~CPSComponent.stop_condition
       ~CPSComponent.time_continuous_dynamics
       ~CPSComponent.time_discrete_dynamics
-      ~CPSComponent.timed_transition
+      ~CPSComponent.timed_event
       ~CPSComponent.update_input
       ~CPSComponent.wait
    
@@ -46,6 +50,8 @@
 
    .. autosummary::
    
+      ~CPSComponent.full_id
       ~CPSComponent.overall_system
+      ~CPSComponent.state
    
    
