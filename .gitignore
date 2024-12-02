@@ -5,3 +5,4 @@ __pycache__/
 automata4cps_old.py
 docs/build/
 docs/source/_autosummary/
+automata4cps/mlruns/

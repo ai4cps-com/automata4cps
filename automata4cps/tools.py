@@ -1,8 +1,9 @@
+"""
+    Various methods to transform data.
+"""
+
 import pandas as pd
-from plotly import graph_objects as go
-from plotly.subplots import make_subplots
 import numpy as np
-from plotly import colors as clr
 from sklearn.metrics import precision_score
 import torch
 from datetime import datetime
@@ -10,11 +11,70 @@ import dash_cytoscape as cyto
 import pprint
 
 
-def remove_timestamps_without_change(data, sig_names):
+def standardize(self, x, fit=False):
+    if type(x) is list:
+        if fit:
+            all_x = torch.vstack(x)
+            self._mean = all_x.mean(dim=0)
+            self._std = all_x.std(dim=0)
+
+        return [(xx - self._mean) / self._std for xx in x]
+    else:
+        if fit:
+            self._mean = x.mean(dim=0)
+            self._std = x.std(dim=0)
+        return (x - self._mean) / self._std
+
+
+def window(self, x):
+    if type(x) is list:
+        return [self._window(xx) for xx in x]
+    else:
+        return x.unfold(dimension=0, size=self.window_size, step=self.window_step)
+
+
+def extend_derivative(signals, use_derivatives=(0, 1)): # Can be torch also
+    if type(use_derivatives) is not list and type(use_derivatives) is not tuple:
+        use_derivatives = [use_derivatives]
+    if type(signals) is list:
+        return [extend_derivative(x, use_derivatives=use_derivatives) for x in signals]
+    else:
+        if type(signals) is pd.DataFrame:
+            signals = torch.from_numpy(signals.values)
+
+        new_signals = [signals]
+        for ord in range(0, max(use_derivatives)):
+            # Initialize a tensor to hold the derivatives, same shape as the input
+            derivatives = torch.zeros_like(signals)
+
+            # Use central differences for the interior points
+            derivatives[1:-1, :] = (signals[2:, :] - signals[:-2, :]) / 2
+
+            # Use forward difference for the first point
+            derivatives[0, :] = signals[1, :] - signals[0, :]
+
+            # Use backward difference for the last point
+            derivatives[-1, :] = signals[-1, :] - signals[-2, :]
+
+            new_signals.append(derivatives)
+            signals = derivatives
+
+        new_signals = [new_signals[i] for i in use_derivatives]
+        new_signals = torch.hstack(new_signals)
+    return new_signals
+
+
+def remove_timestamps_without_change(data, sig_names=None):
     """Removes timestamps where no values changed in comparison to the previous timestamp."""
+
     new_data = []
     for d in data:
-        ind = (d[sig_names].diff() != 0).any(axis=1)
+        d = pd.DataFrame(d)
+        if sig_names is None:
+            sig = d.columns
+        else:
+            sig = sig_names
+        ind = (d[sig].diff() != 0).any(axis=1)
         dd = d.loc[ind]
         new_data.append(dd.copy(deep=True))
     return new_data
@@ -107,6 +167,7 @@ def get_binary_cols(df):
     binary_columns = [col for col in df.columns if set(df[col].unique()).issubset({0, 1})]
     return binary_columns
 
+
 def melt_dataframe(df, timestamp=None):
     if timestamp is None:
         timestamp = df.columns[0]
@@ -131,97 +192,6 @@ def melt_dataframe(df, timestamp=None):
     result = pd.concat(changes).sort_values(by=[timestamp, 'variable']).reset_index(drop=True)
 
     return result
-
-
-def plot_execution_tree(graph, nodes_to_color, color, font_size=30):
-    # The function plots system execution in form of a graph, where horizontal position of the nodes corresponds to the
-    # node's timestamp. The tree branches vertically.
-
-    # for ntd in nodes_to_delete:
-    #     if ntd in graph:
-    #         prenodes = list(graph.predecessors(ntd))
-    #         sucnodes = list(graph.successors(ntd))
-    #         preedges = list(graph.in_edges(ntd))
-    #         sucedges = list(graph.out_edges(ntd))
-    #         edgestodelete = preedges + sucedges
-    #         if ((len(preedges) > 0) and (len(sucedges) > 0)):
-    #             for prenode in prenodes:
-    #                 for sucnode in sucnodes:
-    #                     graph.add_edge(prenode, sucnode)
-    #         if (len(edgestodelete) > 0):
-    #             graph.remove_edges_from(edgestodelete)
-
-    startstring = list(graph.nodes)[0]
-    arr_elements = []
-    num_of_nodes = graph.number_of_nodes()
-    # vertical_height = num_of_states
-    visited = set()
-    stack = [startstring]
-    while stack:
-        node = stack.pop()
-        if node not in visited:
-            elemid = str(node)
-            elemlabel = graph.nodes[node].get('label')
-            datepos1 = datetime.strptime(startstring, "%d/%m/%Y, %H:%M:%S")
-            datepos2 = datetime.strptime(node, "%d/%m/%Y, %H:%M:%S")
-            nodeweight = graph.nodes[node].get('weight')
-            ypos = 0
-            if nodeweight == 0:
-                ypos = num_of_states * 100
-            else:
-                ypos = (nodeweight - 1) * 200
-            element = {
-                'data': {
-                    'id': elemid,
-                    'label': elemlabel
-                },
-                'position': {
-                    'x': (datepos2 - datepos1).total_seconds() / 7200,
-                    'y': ypos
-                },
-                # 'locked': True
-            }
-            arr_elements.append(element)
-            visited.add(node)
-            stack.extend(neighbor for neighbor in graph.successors(node) if neighbor not in visited)
-    for u, v in list(graph.edges):
-        edge_element = {
-            'data': {
-                'source': u,
-                'target': v
-            }
-        }
-        arr_elements.append(edge_element)
-
-
-    colorcode = ['gray'] * num_of_nodes
-    for n in nodes_to_color:
-        if n in graph:
-            n_ind = list(graph.nodes).index(n)
-            if (n_ind < num_of_nodes):
-                colorcode[n_ind] = color
-    new_stylesheet = []
-    for i in range(0, num_of_nodes):
-        new_stylesheet.append({
-            'selector': f'node[id = "{list(graph.nodes)[i]}"]',
-            'style': {
-                'font-size': f'{font_size}px',
-                'content': 'data(label)',
-                'background-color': colorcode[i],
-                'text-valign': 'top',
-                'text-halign': 'center',
-                # 'animate': True
-            }
-        })
-
-    cytoscapeobj = cyto.Cytoscape(
-        id='org-chart',
-        layout={'name': 'preset'},
-        style={'width': '2400px', 'height': '1200px'},
-        elements=arr_elements,
-        stylesheet=new_stylesheet
-    )
-    return cytoscapeobj
 
 
 def compute_purity(cluster_assignments, class_assignments):
@@ -330,7 +300,7 @@ def encode_nominal_list_df(dfs, columns=None, categories=None):
         categories = dict.fromkeys(columns)
         for c in columns:
             categories[c] = np.sort(list(np.unique(np.concatenate([df[c].unique() for df in dfs]))))
-    return [encode_nominal(x, columns, categories=categories) for x in dfs]
+    return [encode_nominal(x, columns, categories=categories)[0] for x in dfs]
 
 
 def dict_to_df(d):
@@ -344,6 +314,8 @@ def dict_to_csv(d, name="csv.csv"):
 
 
 def data_list_to_dataframe(element, data, signal_names, prefix=None, last_var=None):
+    if signal_names is not None:
+        signal_names = signal_names.copy()
     data = pd.DataFrame(data)
     if data.shape[1] == 0:
         return data
@@ -386,11 +358,41 @@ def group_components(comp, *states):
     else:
         return tuple(res)
 
+
 def signal_vector_to_state(sig_vec):
     return pprint.pformat(sig_vec, compact=True)
 
+
 def signal_vector_to_event(previous_vec, sig_vec):
     return
+
+
+def generate_random_walk(start_values, steps=100):
+    """
+    Generates a random walk process for multiple variables.
+
+    Parameters:
+    - start_values (list): A list of starting values for each variable.
+    - steps (int): Number of steps in the random walk.
+
+    Returns:
+    - pd.DataFrame: DataFrame containing the random walk process for each variable.
+    """
+    num_variables = len(start_values)
+
+    # Generate random steps (Normal distribution with mean=0, std=1)
+    random_steps = np.random.normal(loc=0, scale=1, size=(steps, num_variables))
+
+    # Initialize the DataFrame with the start values
+    random_walk = pd.DataFrame([start_values], columns=[f'Var_{i + 1}' for i in range(num_variables)])
+
+    # Generate the random walk by cumulative sum of the random steps
+    for i in range(steps):
+        new_row = random_walk.iloc[-1].values + random_steps[i]
+        new_row_df = pd.DataFrame([new_row], columns=random_walk.columns)
+        random_walk = pd.concat([random_walk, new_row_df], ignore_index=True)
+
+    return random_walk
 
 
 if __name__ == "__main__":

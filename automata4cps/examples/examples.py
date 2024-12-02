@@ -1,6 +1,5 @@
 import datetime
-
-from automata4cps import Automaton
+from automata4cps import Automaton, tools
 import numpy as np
 import pandas as pd
 import os
@@ -57,10 +56,13 @@ def conveyor_system_sfowl(variable_type="all"):
     log2 = pd.read_csv(os.path.join(file_path, "data", "log2.csv"))
     data = [log1, log2]
 
-    cont_cols = [c for c in data[0].columns if c.lower()[-5:] != '_ctrl' and c != "timestamp"]
+    cont_cols = [c for c in data[0].columns if c.lower()[-5:] != '_ctrl' and c != "timestamp" and 'energy' not in c and
+                 "energie" not in c]
     discrete_cols = [c for c in data[0].columns if '_Ctrl' in c]
-    num_bits = {c: max([math.ceil(math.log2(d[c].max())) for d in data]) for c in discrete_cols}
+    # num_bits = {c: max([math.ceil(math.log2(d[c].max())) for d in data]) for c in discrete_cols}
 
+    for d in data:
+        d.drop(columns=[c for c in d.columns if "energy" in c or "energie" in c], axis=1, inplace=True)
 
     # reformat timestamp
     for i, log in enumerate(data):
@@ -68,19 +70,36 @@ def conveyor_system_sfowl(variable_type="all"):
         log['timestamp'] = pd.to_datetime(log['timestamp_new'])
         log.drop(['timestamp_new'], axis=1, inplace=True)
 
-        for col in discrete_cols:
-            series_16bit = log[col].apply(lambda x: list(format(x, f'{num_bits[col]:03d}b')))
-            binary_df = pd.DataFrame(series_16bit.tolist(), columns=[f'{col}_bit_{i}' for i in range(num_bits[col])]).astype(int)
-            data[i].drop([col], axis=1, inplace=True)
-            data[i] = pd.concat([data[i], binary_df], axis=1)
+
+        # series_16bit = log[col].apply(lambda x: list(format(x, f'{num_bits[col]:03d}b')))
+        # binary_df = pd.DataFrame(series_16bit.tolist(), columns=[f'{col}_bit_{i}' for i in range(num_bits[col])]).astype(int)
+        # data[i].drop([col], axis=1, inplace=True)
+        # data[i] = pd.concat([data[i], binary_df], axis=1)
+    data = tools.encode_nominal_list_df(data, columns=discrete_cols)
 
     discrete_cols = [c for c in data[0].columns if '_Ctrl' in c]
 
     # remove constant bits
-    constant_cols = [c for c in discrete_cols if 1 == len(set(item for sublist in ([d[c].unique() for d in data]) for item in sublist))]
+    # constant_cols = [c for c in discrete_cols if 1 == len(set(item for sublist in ([d[c].unique() for d in data]) for item in sublist))]
+    # for d in data:
+    #     d.drop(columns=constant_cols, axis=1, inplace=True)
+    # discrete_cols = [d for d in discrete_cols if d not in constant_cols]
+
+
+    # Adding the Path/Weg variable
     for d in data:
-        d.drop(columns=constant_cols, axis=1, inplace=True)
-    discrete_cols = [d for d in discrete_cols if d not in constant_cols]
+        control_sig_1 = d['O_w_BRU_Axis_Ctrl_1'].to_numpy()
+        control_sig_3 = d['O_w_BRU_Axis_Ctrl_3'].to_numpy()
+        ind = np.logical_and(control_sig_1[0:-1] == 1, control_sig_3[1:] == 1)
+        ind = np.nonzero(ind)[0] + 1
+        ind = [0] + list(ind) + [d.shape[0]]
+        d["Weg"] = 0.
+        for n in range(len(ind) - 1):
+            # cc = c.iloc[ind[n]:ind[n + 1]].copy()
+            time_diff = d['timestamp'].iloc[min(ind[n+1], d.shape[0]-1)] - d['timestamp'].iloc[ind[n]]
+            if time_diff < datetime.timedelta(seconds=13.5):
+                d.iloc[ind[n]:ind[n + 1], d.columns.get_loc("Weg")] = 1
+    discrete_cols.append("Weg")
 
     if variable_type == "discrete":
         discrete_data = [d[['timestamp'] + discrete_cols] for d in data]
@@ -100,7 +119,7 @@ if __name__ == "__main__":
     # A.simulate(finish_time=500)
 
     A = simple_conveyor_system()
-    A.view_plotly().show()
+    A.plot_cps().show()
     ddata = A.simulate(finish_time=500)
 
     A = Automaton()
@@ -110,4 +129,4 @@ if __name__ == "__main__":
                       ("s3", "s1", "e2")])
 
     print(A)
-    A.view_plotly().show()
+    A.plot_cps().show()

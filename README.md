@@ -38,6 +38,12 @@ To install Automata4CPS:
 pip install git+https://github.com/ai4cps-com/automata4cps.git
 ```
 
+to specify the version:
+
+```
+pip install git+https://github.com/ai4cps-com/automata4cps.git@0.1.12
+```
+
 ## Data
 
 In folder "data" there are several datasets which can be easily loaded using examples module.

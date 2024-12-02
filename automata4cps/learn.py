@@ -1,9 +1,21 @@
+"""
+    The module provides learning algorithms for creation of different kinds of automata.
+
+    Authors:
+    - Nemanja Hranisavljevic, hranisan@hsu-hh.de, nemanja@ai4cps.com
+    - Tom Westermann, tom.westermann@hsu-hh.de, tom@ai4cps.com
+"""
+
+
 from automata4cps import Automaton
 from collections import OrderedDict
 import pprint
 
 
 def simple_learn_from_event_logs(data, initial=True, verbose=False):
+    """
+    Simple algorithm to learn a timed automaton.
+    """
     # Here the state is determined by the events it emits, but only the first event is taken as transition
     if type(data) is not list:
         data = [data]
@@ -227,7 +239,7 @@ if __name__ == "__main__":
     state_sequences = tools.group_data_on_discrete_state(data, state_column="StateEstimate", reset_time=True,
                                                          time_col="timestamp")
     dd = list(state_sequences.values())[4]
-    tools.plot_data(dd, timestamp="timestamp", iterate_colors=False).show()
+    tools.plot_timeseries(dd, timestamp="timestamp", iterate_colors=False).show()
     exit()
 
     print("Number of sequences: ", len(discrete_data_events))
@@ -235,8 +247,8 @@ if __name__ == "__main__":
 
     ta = build_pta(discrete_data_events)
     print(ta)
-    ta.view_plotly().show("browser")
-    ta.view_plotly().show()
+    ta.plot_cps().show("browser")
+    ta.plot_cps().show()
 
 
     # ta = simple_learn_from_signal_vectors(discrete_data, sig_names=discrete_cols)
@@ -248,8 +260,8 @@ if __name__ == "__main__":
 
     ta = build_pta(discrete_data_events)
     print(ta)
-    ta.view_plotly().show("browser")
-    ta.view_plotly().show()
+    ta.plot_cps().show("browser")
+    ta.plot_cps().show()
 
     # ta = simple_learn_from_signal_vectors(discrete_data, sig_names=discrete_cols)
     # ta.view_plotly(show_num_occur=True)
@@ -296,4 +308,4 @@ if __name__ == "__main__":
 
     # test_data1 = createEventsfromDataFrame(test_data1)
     pta = build_pta(test_data1)
-    pta.view_plotly().show()
+    pta.plot_cps().show()

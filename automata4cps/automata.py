@@ -45,7 +45,7 @@ class Automaton (CPSComponent):
             else:
                 self.__super_states = list(super_states)
 
-            self._G.add_nodes_from(self.__super_states)
+            # self._G.add_nodes_from(self.__super_states)
 
         if decision_states is not None:
             if type(decision_states) is str:
@@ -66,6 +66,10 @@ class Automaton (CPSComponent):
                 else:
                     self._G.add_edge(tr[0], tr[2], event=tr[1])
 
+        if 'discr_state_names' not in kwargs:
+            kwargs['discr_state_names'] = ['Mode']
+        elif type(kwargs['discr_state_names']) is str:
+            kwargs['discr_state_names'] = [kwargs['discr_state_names']]
         CPSComponent.__init__(self, id, **kwargs)
 
     @property
@@ -77,27 +81,36 @@ class Automaton (CPSComponent):
         return self._G.edges
 
     @property
-    def state(self):
+    def discrete_state(self):
         return self._q
+
+    @property
+    def state(self):
+        """
+        Automata discrete state is uni-variate.
+        :return:
+        """
+        if len(self._q) < 1:
+            raise Exception(f"State of {self.id} is empty.")
+        return self._q[0], self._xt, self._xk
 
     @state.setter
     def state(self, state):
         if type(state) is not tuple:
-            new_states = (state, (), (), 0)
-        elif len(state) < 4:
-            new_states = [(), (), (), 0]
+            new_states = (state, (), ())
+        elif len(state) < 3:
+            new_states = [(), (), ()]
             for i, v in enumerate(state):
                 new_states[i] = v
         else:
             new_states = state
 
-        if new_states[0] not in self.discrete_states:
+        if new_states[0] not in self.discrete_states and new_states[0] not in self.__super_states:
             raise ValueError(f'State "{new_states[0]}" is not a valid state. Valid states are: {self.discrete_states}')
 
-        self._q = new_states[0]
+        self._q = (new_states[0],)
         self._xt = new_states[1]
         self._xk = new_states[2]
-        self._t = new_states[3]
 
     @property
     def num_modes(self):
@@ -355,7 +368,7 @@ class Automaton (CPSComponent):
                 new_q = dests.pop()
         return new_q, None, None
 
-    def timed_transition(self, q, xc, xd, y, use_observed_timings=False):
+    def timed_event(self, q, xc, xd):
         possible_destinations = list(ev for s, d, ev in self._G.out_edges(q, data=True) if s == q)
         if possible_destinations:
             if len(possible_destinations) == 1:

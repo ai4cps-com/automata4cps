@@ -131,14 +131,14 @@ def plot_timeseries(data, title=None, timestamp=None, use_columns=None, discrete
                     if customdata is not None:
                         customdata = customdata[0:ind]
 
-                fig.add_trace(go.Scatter(x=t, y=sig, mode='markers',
+                fig.add_trace(go.Scattergl(x=t, y=sig, mode='markers',
                                          name=trace_name, marker=dict(line_color=color, color=color,
                                                                     line_width=2, size=marker_size),
                                          customdata=customdata,
                                          hovertemplate=hovertemplate, **kwargs), row=i, col=1)
             else:
                 ind = min(limit_num_points, d.shape[0])
-                fig.add_trace(go.Scatter(x=t[0:ind], y=sig[0:ind], mode=mode, name=trace_name, customdata=customdata,
+                fig.add_trace(go.Scattergl(x=t[0:ind], y=sig[0:ind], mode=mode, name=trace_name, customdata=customdata,
                                          line=dict(color=color), line_shape=lineShape, **kwargs), row=i, col=1)
             fig.update_yaxes(title_text=str(col_name), row=i, col=1, title_font=dict(size=y_title_font_size),
                              categoryorder='category ascending')
@@ -151,7 +151,7 @@ def plot_timeseries(data, title=None, timestamp=None, use_columns=None, discrete
         if bounds is not None:
             upper_col = bounds[0].iloc[:, col_ind]
             lower_vol = bounds[1].iloc[:, col_ind]
-            upper_bound = go.Scatter(
+            upper_bound = go.Scattergl(
                 name='Upper Bound',
                 x=bounds[0].index.get_level_values(-1),
                 y=upper_col,
@@ -159,7 +159,7 @@ def plot_timeseries(data, title=None, timestamp=None, use_columns=None, discrete
                 marker=dict(color="#444"),
                 line=dict(width=0),
                 showlegend=False)
-            lower_bound = go.Scatter(
+            lower_bound = go.Scattergl(
                 name='Lower Bound',
                 x=bounds[1].index.get_level_values(-1),
                 y=lower_vol,
@@ -188,7 +188,7 @@ def plot_stateflow(stateflow, color_mapping=None, state_col='State', bar_height=
     stateflow_df_list = []
     for station, s in stateflow.items():
         if s.size:
-            sf = s[(~s.State.isin(idle_states))]
+            sf = s[(~s[state_col].isin(idle_states))]
                     # ((start_plot <= s.Timestamp) &
                     #  (s.Timestamp <= finish_plot)) |
                     # ((start_plot <= s.Finish) & (s.Finish <= finish_plot)))
@@ -255,10 +255,10 @@ def plot_stateflow(stateflow, color_mapping=None, state_col='State', bar_height=
                 if not pd.isnull(val) and k not in [state_col, finish_column, start_column, 'Task', 'Duration']:
                     ht += f'<br>{k}: {val}'
             hovertext.append(ht)
-        traces.append(go.Scattergl(x=x, y=y, line=dict(width=bar_height), name=name, line_color=color_mapping.get(name, "b"),
+        traces.append(go.Scattergl(x=x, y=y, line=dict(width=bar_height), name=name, line_color=color_mapping.get(name, "black"),
                                    hoverinfo='skip', mode='lines', legendgroup=name, showlegend=True))
         traces.append(go.Scattergl(x=np.asarray(g[start_column] + g.Duration / 2), y=g.Task, mode='text+markers',
-                                   marker=dict(size=1), name=name, marker_color=color_mapping.get(name, "b"),
+                                   marker=dict(size=1), name=name, marker_color=color_mapping.get(name, "black"),
                                    showlegend=False,
                                    hovertext=hovertext, text=text, textfont=dict(size=10, color='olive'),
                                    hovertemplate=f'<extra></extra><b>{name}</b><br>%{{hovertext}}'))
@@ -271,7 +271,7 @@ def plot_stateflow(stateflow, color_mapping=None, state_col='State', bar_height=
 
 
 def plot_cps_component(cps, id=None, node_labels=False, edge_labels=True, edge_font_size=6, edge_text_max_width=None,
-                       output="cyto"):
+                       node_size=10, output="cyto"):
     """
 
     :param cps:
@@ -308,8 +308,8 @@ def plot_cps_component(cps, id=None, node_labels=False, edge_labels=True, edge_f
     if output == "elements":
         return elements
 
-    node_style = {'width': 10,
-                  'height': 10}
+    node_style = {'width': node_size,
+                  'height': node_size}
     if node_labels:
         node_style['label'] = 'data(id)'
         node_style['font-size'] = 6
@@ -369,8 +369,8 @@ def plot_cps_component(cps, id=None, node_labels=False, edge_labels=True, edge_f
     return network
 
 
-def plot_cps(cps: CPS, node_labels=False, edge_labels=True, node_size=40, node_font_size=20, edge_font_size=16, edge_text_max_width=None, output="cyto",
-             dash_port=8050, **kwargs):
+def plot_cps(cps: CPS, dash_id=None, node_labels=False, edge_labels=True, node_size=40, node_font_size=20, edge_font_size=16, edge_text_max_width=None, output="cyto",
+             dash_port=8050, height='100vh', **kwargs):
     """
     Plots all the components of a CPS in the same figure.
     :param cps: CPS to plot.
@@ -388,9 +388,11 @@ def plot_cps(cps: CPS, node_labels=False, edge_labels=True, node_size=40, node_f
     """
     elements = dict(nodes=[], edges=[])
 
-
-    for comid, com in cps._com.items():
-        els = plot_cps_component(com, output="elements")
+    for comid, com in cps.items():
+        try:
+            els = plot_cps_component(com, output="elements")
+        except:
+            els = dict(edges=[], nodes=[])
         elements['nodes'].append({'data': {'id': comid, 'label': comid}, 'classes': 'parent'})
         for x in els['nodes']:
             x['data']['group'] = comid
@@ -436,7 +438,7 @@ def plot_cps(cps: CPS, node_labels=False, edge_labels=True, node_size=40, node_f
         }]
 
     network = cyto.Cytoscape(
-        id=cps.id,
+        id=dash_id if dash_id is not None else cps.id,
         # layout={'name': 'cose', "fit": True},
         layout={
             'name': 'cose',
@@ -456,7 +458,7 @@ def plot_cps(cps: CPS, node_labels=False, edge_labels=True, node_size=40, node_f
         # minZoom=0.5,
         # style={'width': '100%'},
         stylesheet=stylesheet,
-        elements=elements, style={'width': '100%', 'height': '100vh'},
+        elements=elements, style={'width': '100%', 'height': height},
         **kwargs)
 
     modal_state_data = dbc.Modal(children=[dbc.ModalHeader("Timings"),
@@ -724,11 +726,11 @@ def plot_transition(self, s, d):
     return fig
 
 
-def plot_state_transitions(self, state, obs=None):
-    trans = self.out_transitions(state)
+def plot_state_transitions(ta, state, obs=None):
+    trans = ta.out_transitions(state)
     titles = []
     for k in trans:
-        titles.append('State: {0} -> {1} -> {2}'.format(k[0], k[2], k[1]))
+        titles.append('State: {0} -> {1} -> {2}'.format(k[0], k[3]['event'], k[1]))
         titles.append('')
 
     fig = subplots.make_subplots(len(trans), 2, shared_xaxes=True, shared_yaxes=True,
@@ -747,9 +749,18 @@ def plot_state_transitions(self, state, obs=None):
         if len(v) == 0:
             continue
         # v['VG'] = 'Unknown'
+        if 'Vergussgruppe' in v:
+            v['Vergussgruppe'] = v['Vergussgruppe'].fillna('Unknown')
+        else:
+            v['Vergussgruppe'] = 'Unknown'
+
+        v['Order'] = 'Unknown'
+        v['ChipID'] = 'Unknown'
+        v['Item'] = 'Unknown'
+        v['ArtNr'] = 'Unknown'
         for vg, vv in v.groupby('Vergussgruppe'):
             vv = vv.to_dict('records')
-            fig.add_trace(go.Histogram(y=[o['Timing'].total_seconds() for o in vv],
+            fig.add_trace(go.Histogram(y=[o['Duration'] for o in vv],
                                        name=vg,
                                        marker_color=DEFAULT_PLOTLY_COLORS[ind_color]), row=ind, col=2)
             ind_color += 1
@@ -761,26 +772,26 @@ def plot_state_transitions(self, state, obs=None):
 
         ind_color = 0
         # v = pd.DataFrame(v)
-        v['Vergussgruppe'].fillna('Unknown', inplace=True)
+
         v['Item'] = v['HID']
         for vg, vv in v.groupby('Vergussgruppe'):
             vv = vv.to_dict('records')
             hovertext = [
-                'Timing: {}s<br>Zähler: {}<br>ChipID: {}<br>Order: {}<br>VG: {}<br>ArtNr: {}'.format(o['Timing'],
+                'Timing: {}s<br>Zähler: {}<br>ChipID: {}<br>Order: {}<br>VG: {}<br>ArtNr: {}'.format(o['Duration'],
                                                                                                      o['Item'],
                                                                                                      o['ChipID'],
                                                                                                      o['Order'],
                                                                                                      o['Vergussgruppe'],
                                                                                                      o['ArtNr'])
                 for o in vv]
-            fig.add_trace(go.Scatter(x=[o['Timestamp'] for o in vv], y=[o['Timing'].total_seconds() for o in vv],
+            fig.add_trace(go.Scatter(x=[o['Timestamp'] for o in vv], y=[o['Duration'] for o in vv],
                                      marker=dict(size=6, symbol="circle", color=DEFAULT_PLOTLY_COLORS[ind_color]),
                                      name=vg,
                                      mode="markers",
                                      hovertext=hovertext), row=ind, col=1)
             ind_color += 1
         fig.update_xaxes(showticklabels=True, row=ind, col=1)
-    fig.update_layout(showlegend=False, margin=dict(b=0, t=30), width=800)
+    fig.update_layout(showlegend=False, margin=dict(b=0, t=30), width=1200)
     return fig
 
 
