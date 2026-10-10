@@ -15,5 +15,6 @@ imageio[ffmpeg]
 torch
 graphviz
 pydot
+pydotplus
 nbformat
 simpy
