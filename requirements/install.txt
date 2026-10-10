@@ -1,5 +1,6 @@
 dash==3.4.0
 dash-bootstrap-components
+dash-cytoscape
 dash-extensions
 waitress
 networkx
