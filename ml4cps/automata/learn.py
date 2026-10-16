@@ -273,9 +273,9 @@ def simple_learn_from_signal_vectors(data, config=None, drop_no_changes=True, ve
         mask = ~d[sig_names].isin([0, 1])
         has_invalid = mask.any().any()
         if has_invalid:
-            event = d[sig_names].apply(lambda x: ' '.join(x.astype(str)).replace(".0", ""), 1).iloc[1:]
+            event = d[sig_names].apply(lambda x: ' '.join(map(str, x)).replace(".0", ""), 1).iloc[1:]
         else:
-            event = d[sig_names].diff().apply(lambda x: ' '.join(x.astype(str)).replace(".0", ""), 1).iloc[1:]
+            event = d[sig_names].diff().apply(lambda x: ' '.join(map(str, x)).replace(".0", ""), 1).iloc[1:]
         deltat = d.index.diff()[1:]
 
         if sequence_config is None:
