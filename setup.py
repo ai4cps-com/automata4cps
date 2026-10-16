@@ -24,6 +24,7 @@ setup(
     description="Tools for learning, plotting, analyzing etc. of discrete, continuous, timed, and "
                 "hybrid cyber-physical systems.",
     long_description=io.open("README.md", encoding="utf-8").read(), # pylint: disable=consider-using-with
+    long_description_content_type="text/markdown",
     install_requires=read_req_file("install"),
     python_requires='>=3.6',
     extras_require={

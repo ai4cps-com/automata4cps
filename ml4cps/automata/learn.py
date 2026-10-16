@@ -276,7 +276,7 @@ def simple_learn_from_signal_vectors(data, config=None, drop_no_changes=True, ve
             event = d[sig_names].apply(lambda x: ' '.join(map(str, x)).replace(".0", ""), 1).iloc[1:]
         else:
             event = d[sig_names].diff().apply(lambda x: ' '.join(map(str, x)).replace(".0", ""), 1).iloc[1:]
-        deltat = d.index.diff()[1:]
+        deltat = d.index.to_series().diff().iloc[1:]
 
         if sequence_config is None:
             transition_config = [None] * len(previous_state)

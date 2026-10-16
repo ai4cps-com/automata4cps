@@ -1,7 +1,7 @@
 include README.md
 include LICENSE
 
-recursive-include ml4cps *.py
+recursive-include ml4cps *.py *.csv *.md *.css *.jpg *.png
 recursive-include requirements *.txt
 recursive-include notebooks *.ipynb
 
