@@ -183,7 +183,7 @@ class CPS:
             for c in self.get_all_components():
                 exe_data[c.full_id] = c.get_execution_data()
         else:
-            for k, c in self.com.items():
+            for k, c in self._com.items():
                 exe_data[c.id] = c.get_execution_data()
         return exe_data
 
