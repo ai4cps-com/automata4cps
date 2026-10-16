@@ -15,10 +15,12 @@ nemanja@ai4cps.com
 from __future__ import annotations
 
 import importlib
+import math
 from abc import ABC, abstractmethod
 
 import torch
 from torch import nn
+import torch.nn.functional as F
 from ml4cps.tools import compute_purity
 
 
@@ -96,6 +98,9 @@ class XBinaryRBM(nn.Module, ABC):
         # Training metadata may be populated by external trainer utilities.
         self.learning_curve: list[dict[str, float]] = []
         self.valid_curve: list[dict[str, float]] = []
+        self.hidden_activation_curve: list[dict[str, list[float]]] = []
+        self.valid_hidden_activation_curve: list[dict[str, list[float]]] = []
+        self.gradient_curve: list[dict[str, float]] = []
         self.num_epoch: int = 0
 
         # Persistent fantasy particles used by Persistent Contrastive Divergence.
@@ -608,14 +613,19 @@ class XBinaryRBM(nn.Module, ABC):
         loss_name: str = "cd",
         num_gibbs: int = 1,
         use_probability_last_v_update: bool = False,
-    ) -> torch.Tensor:
+        sparsity_target: float = 0.25,
+        sparsity_weight: float = 0.0,
+        temporal_persistence_weight: float = 0.0,
+        return_components: bool = False,
+    ) -> torch.Tensor | dict[str, torch.Tensor]:
         """
         Compute one of the supported training losses.
 
         Parameters
         ----------
         x : torch.Tensor
-            Input minibatch.
+            Input minibatch shaped (batch, visible) or (batch, time, visible).
+            The base loss includes every time step of a supplied window.
         loss_name : str, optional
             Name of the loss to compute. Supported values are:
 
@@ -629,35 +639,99 @@ class XBinaryRBM(nn.Module, ABC):
             Whether to use visible distribution parameters instead of sampled
             visible states in the final negative update for ``"cd"`` and
             ``"pcd"``.
+        sparsity_target : float, optional
+            Target mean activation of each hidden unit, strictly between 0 and 1.
+        sparsity_weight : float, optional
+            Nonnegative weight of the per-unit KL sparsity penalty.
+        temporal_persistence_weight : float, optional
+            Nonnegative weight of BCE between adjacent hidden activations within
+            each input window. Has no effect on 2D inputs or one-step windows.
+        return_components : bool, optional
+            Return the base loss, raw penalties, weighted penalties and total
+            from the same computation, without resampling the negative chain.
 
         Returns
         -------
-        torch.Tensor
-            Scalar training loss.
+        torch.Tensor or dict[str, torch.Tensor]
+            Scalar training loss, or its components when return_components=True.
 
         Raises
         ------
         ValueError
             If ``loss_name`` is not supported.
         """
+        if x.ndim not in (2, 3):
+            raise ValueError("RBM input must have shape (batch, visible) or (batch, time, visible)")
+        samples = x.reshape(-1, x.shape[-1])
         if loss_name == "cd":
-            return self.cd_loss(
-                x,
+            loss = self.cd_loss(
+                samples,
                 num_gibbs=num_gibbs,
                 use_probability_last_v_update=use_probability_last_v_update,
             )
-        if loss_name == "pcd":
-            return self.pcd_loss(
-                x,
+        elif loss_name == "pcd":
+            loss = self.pcd_loss(
+                samples,
                 num_gibbs=num_gibbs,
                 use_probability_last_v_update=use_probability_last_v_update,
             )
-        if loss_name == "sm":
-            return self.score_matching_loss(x)
-        if loss_name == "recon":
-            return self.reconstruction_loss(x)
+        elif loss_name == "sm":
+            loss = self.score_matching_loss(samples)
+        elif loss_name == "recon":
+            loss = self.reconstruction_loss(samples)
+        else:
+            raise ValueError(f"Unsupported loss: {loss_name}")
 
-        raise ValueError(f"Unsupported loss: {loss_name}")
+        regularization = self.regularization_loss(
+            x, sparsity_target=sparsity_target, sparsity_weight=sparsity_weight,
+            temporal_persistence_weight=temporal_persistence_weight,
+            return_components=return_components,
+        )
+        if not return_components:
+            return loss + regularization
+        base_name = {"cd": "CD", "pcd": "PCD", "sm": "ScoreMatchingLoss",
+                     "recon": "ReconstructionLoss"}[loss_name]
+        return {base_name: loss, **regularization,
+                "Loss": loss + regularization["WeightedSparsityKL"]
+                        + regularization["WeightedTemporalBCE"]}
+
+    def regularization_loss(
+        self, x, sparsity_target=0.25, sparsity_weight=0.0,
+        temporal_persistence_weight=0.0,
+        return_components=False,
+    ):
+        """Log-space per-unit KL sparsity and adjacent-step BCE within windows."""
+        if not 0 < sparsity_target < 1:
+            raise ValueError("sparsity_target must be strictly between 0 and 1")
+        if sparsity_weight < 0 or temporal_persistence_weight < 0:
+            raise ValueError("Regularization weights must be nonnegative")
+        kl = x.new_zeros(())
+        temporal = x.new_zeros(())
+        if sparsity_weight == 0 and temporal_persistence_weight == 0 and not return_components:
+            return kl
+
+        logits = self.v2h(x.reshape(-1, x.shape[-1]), pre_sigmoid=True)
+        if sparsity_weight or return_components:
+            # log(mean(sigmoid(z))) and log(mean(1 - sigmoid(z))) stay
+            # differentiable even when float32 sigmoid rounds to zero or one.
+            log_count = math.log(logits.shape[0])
+            log_active = torch.logsumexp(F.logsigmoid(logits), dim=0) - log_count
+            log_inactive = torch.logsumexp(F.logsigmoid(-logits), dim=0) - log_count
+            target = logits.new_tensor(sparsity_target)
+            kl = (target * (target.log() - log_active) +
+                  (1 - target) * ((1 - target).log() - log_inactive)).mean()
+
+        if (temporal_persistence_weight or return_components) and x.ndim == 3 and x.shape[1] > 1:
+            window_logits = logits.reshape(x.shape[0], x.shape[1], -1)
+            temporal = F.binary_cross_entropy_with_logits(
+                window_logits[:, 1:, :], window_logits[:, :-1, :].sigmoid().detach(),
+            )
+        weighted_kl = sparsity_weight * kl
+        weighted_temporal = temporal_persistence_weight * temporal
+        if return_components:
+            return dict(SparsityKL=kl, TemporalBCE=temporal,
+                        WeightedSparsityKL=weighted_kl, WeightedTemporalBCE=weighted_temporal)
+        return weighted_kl + weighted_temporal
 
     @torch.no_grad()
     def generate(self, num_examples: int, num_steps: int = 100) -> torch.Tensor:

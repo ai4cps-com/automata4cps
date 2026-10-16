@@ -18,7 +18,7 @@ class GaussianBinaryRBM(XBinaryRBM):
     The conditional distributions are:
 
     .. math::
-        p(h_j = 1 \\mid v) = \\sigma\\left(\\sum_i \\frac{v_i}{\\sigma_i^2} W_{ij} + b_j^h\\right)
+        p(h_j = 1 \\mid v) = \\sigma\\left(\\sum_i \\frac{v_i}{\\sigma_i} W_{ij} + b_j^h\\right)
 
     and
 
@@ -28,7 +28,7 @@ class GaussianBinaryRBM(XBinaryRBM):
     where the conditional visible mean is
 
     .. math::
-        \\mu(h) = h W^T + b^v
+        \\mu(h) = \\sigma \\odot (h W^T) + b^v
 
     Parameters
     ----------
@@ -39,7 +39,7 @@ class GaussianBinaryRBM(XBinaryRBM):
     device : str, optional
         Device on which the module parameters and buffers are stored.
         Default is ``"cpu"``.
-    sigma_learnable : bool, optional
+    is_sigma_learnable : bool, optional
         Whether the visible standard deviations are learnable.
         If ``True``, ``log_sigma_v`` is an ``nn.Parameter``.
         If ``False``, it is stored as a non-trainable buffer.
@@ -59,7 +59,7 @@ class GaussianBinaryRBM(XBinaryRBM):
     Notes
     -----
     - The model assumes a diagonal covariance matrix for the visible units.
-    - When ``sigma_learnable=False``, the visible noise level is fixed.
+    - When ``is_sigma_learnable=False``, the visible noise level is fixed.
     - The weight matrix is reinitialized after calling the base constructor to
       preserve the original Gaussian-RBM scaling convention.
     """
@@ -71,7 +71,8 @@ class GaussianBinaryRBM(XBinaryRBM):
         device: str = "cpu",
         sigma: float = 1.0,
         log_sigma_v = None,
-        name=''
+        name='',
+        is_sigma_learnable: bool = False,
     ):
         """
         Initialize the Gaussian-Binary RBM.
@@ -86,6 +87,8 @@ class GaussianBinaryRBM(XBinaryRBM):
             Target device. Default is ``"cpu"``.
         sigma : float, optional
             Initial standard deviation used for all visible units.
+        is_sigma_learnable : bool, optional
+            Whether to train the visible standard deviations. Defaults to False.
 
         Notes
         -----
@@ -93,18 +96,19 @@ class GaussianBinaryRBM(XBinaryRBM):
         than ``sigma_v`` directly to ensure positivity through exponentiation.
         """
         super().__init__(n_visible, n_hidden, name=name, device=device)
+        self.is_sigma_learnable = is_sigma_learnable
 
         if log_sigma_v is not None:
-            self.register_buffer("log_sigma_v", log_sigma_v)
-            sigma_value = torch.exp(self.log_sigma_v.detach()).mean().cpu()
+            log_sigma_init = log_sigma_v.detach().clone()
+            sigma_value = torch.exp(log_sigma_init).mean().item()
         else:
             sigma_value = float(sigma)
-            log_sigma_init = math.log(sigma_value)
+            log_sigma_init = torch.full((1, n_visible), math.log(sigma_value), dtype=torch.float32)
 
-            self.register_buffer(
-                "log_sigma_v",
-                torch.full((1, n_visible), log_sigma_init, dtype=torch.float32),
-            )
+        if self.is_sigma_learnable:
+            self.log_sigma_v = nn.Parameter(log_sigma_init)
+        else:
+            self.register_buffer("log_sigma_v", log_sigma_init)
 
         # Reinitialize weights using the original Gaussian-RBM scaling.
         self.weights = nn.Parameter(torch.randn(n_visible, n_hidden) * 0.01 * sigma_value)
@@ -114,7 +118,7 @@ class GaussianBinaryRBM(XBinaryRBM):
         init_args = super()._init_args()
         init_args.update(
             {
-                "sigma_learnable": self.is_sigma_learnable,
+                "is_sigma_learnable": self.is_sigma_learnable,
                 "sigma": float(torch.exp(self.log_sigma_v.detach()).mean().cpu()),
             }
         )
@@ -173,11 +177,11 @@ class GaussianBinaryRBM(XBinaryRBM):
         The conditional mean is
 
         .. math::
-            \\mu(h) =  \\cdot h W^T + b^v
+            \\mu(h) = \\sigma \\odot (h W^T) + b^v
 
         This method returns the mean of ``p(v | h)``, not a sampled visible state.
         """
-        visible_mean = h @ self.weights.t() + self.visible_bias
+        visible_mean = (h @ self.weights.t()) * self.sigma_v() + self.visible_bias
         return visible_mean
 
     def v2h(self, v: torch.Tensor, pre_sigmoid: bool = False) -> torch.Tensor:
@@ -202,16 +206,17 @@ class GaussianBinaryRBM(XBinaryRBM):
         Notes
         -----
         For Gaussian visible units, the visible input is first rescaled by the
-        inverse variance:
+        inverse standard deviation:
 
         .. math::
-            \\tilde{v}_i = \\frac{v_i}{\\sigma_i^2}
+            \\tilde{v}_i = \\frac{v_i}{\\sigma_i}
 
         and the hidden conditional is then computed using the base binary-hidden
         implementation.
         """
+        v = v.reshape(v.size(0), -1)
         sigma_v = self.sigma_v(v)
-        scaled_v = v / sigma_v.pow(2)
+        scaled_v = v / sigma_v
         return super().v2h(scaled_v, pre_sigmoid=pre_sigmoid)
 
     def sample_v(self, visible_mean: torch.Tensor) -> torch.Tensor:
@@ -265,7 +270,7 @@ class GaussianBinaryRBM(XBinaryRBM):
             \\sum_i \\frac{(v_i - b_i^v)^2}{2 \\sigma_i^2}
             -
              \\sum_j
-            \\log\\left(1 + \\exp\\left(\\sum_i \\frac{v_i}{\\sigma_i^2} W_{ij} + b_j^h\\right)\\right)
+            \\log\\left(1 + \\exp\\left(\\sum_i \\frac{v_i}{\\sigma_i} W_{ij} + b_j^h\\right)\\right)
 
         using ``softplus(z) = log(1 + exp(z))`` for numerical stability.
 

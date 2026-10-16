@@ -223,7 +223,11 @@ def plot_input_space(self, data=None, samples=None, show_gaussian_components=Fal
     return fig
 
 def plot_learning_curve(model):
-    return vis.plot_timeseries([pd.DataFrame(model.learning_curve), pd.DataFrame(model.valid_curve)],
+    curves = [pd.DataFrame(model.learning_curve), pd.DataFrame(model.valid_curve)]
+    columns = list(dict.fromkeys(column for curve in curves for column in curve.columns))
+    # Optimization losses exist only for training; leave validation series empty.
+    curves = [curve.reindex(columns=columns) for curve in curves]
+    return vis.plot_timeseries(curves,
                                title='Learning curve', names=['Train', 'Valid'], xaxis_title='Epoch')
 
 def plot_error_histogram(self, d, v=None):

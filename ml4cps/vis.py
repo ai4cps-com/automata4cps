@@ -961,7 +961,13 @@ def plot_cps_component(cps, id=None, node_labels=False, center_node_labels=False
     inferred_configs = sorted(inferred_configs, key=lambda x: str(x))
     active_configuration = getattr(cps, "configuration", None)
     plot_all_configurations = active_configuration is None and len(inferred_configs) > 0
-    config_color_map = {cfg: DEFAULT_PLOTLY_COLORS[i % len(DEFAULT_PLOTLY_COLORS)] for i, cfg in enumerate(inferred_configs)}
+    if len(inferred_configs) <= len(DEFAULT_PLOTLY_COLORS):
+        config_palette = DEFAULT_PLOTLY_COLORS
+    else:
+        # Expand the palette rather than recycling colors for larger systems.
+        config_palette = [f"hsl({360 * i / len(inferred_configs):.3f},65%,45%)"
+                          for i in range(len(inferred_configs))]
+    config_color_map = dict(zip(inferred_configs, config_palette))
 
     for e in all_transitions:
         source, target, event_key, transition_data = e
