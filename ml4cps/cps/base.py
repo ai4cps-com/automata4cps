@@ -14,7 +14,15 @@ import pandas as pd
 import warnings
 from scipy.integrate import solve_ivp
 import simpy
-from mlflow.pyfunc import PythonModel
+try:
+    from mlflow.pyfunc import PythonModel
+except ModuleNotFoundError as exc:
+    if exc.name != "mlflow":
+        raise
+
+    class PythonModel:
+        """Base for CPS components when the optional MLflow extra is absent."""
+
 from ml4cps import tools
 from ml4cps.cps import sim
 

@@ -29,7 +29,8 @@ setup(
     python_requires='>=3.6',
     extras_require={
         "torch": read_req_file("torch"),
-        "dev": read_req_file("dev") + read_req_file("torch"),
+        "mlflow": read_req_file("mlflow"),
+        "dev": read_req_file("dev") + read_req_file("torch") + read_req_file("mlflow"),
     },
     entry_points={
         "console_scripts": [],

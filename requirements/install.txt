@@ -4,13 +4,15 @@ dash-cytoscape
 dash-extensions
 waitress
 networkx
+numpy
 pandas
+scipy
+scikit-learn
 flask
 flask-login
 flask-restful
 dill
 joblib
-mlflow
 imageio
 imageio[ffmpeg]
 graphviz

@@ -12,7 +12,7 @@ The code was developed for several research publications ([bibtex](docs/cite.bib
 
 ## Installation
 
-Install the core package without PyTorch:
+Install the core package without PyTorch or MLflow:
 
 ```sh
 pip install ml4cps
@@ -24,7 +24,16 @@ For DEBTA models and tensor-based tools, install the optional PyTorch dependency
 pip install "ml4cps[torch]"
 ```
 
-The `dev` extra also includes PyTorch for development and tests.
+For experiment tracking and MLflow model integration, install:
+
+```sh
+pip install "ml4cps[mlflow]"
+```
+
+Combine both extras with `pip install "ml4cps[torch,mlflow]"`.
+Core CPS simulation, visualization, and DEBTA with `log_mlflow=False` work
+without MLflow. Tracking calls require the `mlflow` extra.
+The `dev` extra includes both PyTorch and MLflow for development and tests.
 
 ## Data
 In the folder "data" there are several datasets that can be easily loaded using the [`ml4cps.examples`](ml4cps/examples/examples.py) module.

@@ -29,7 +29,7 @@ import pandas as pd
 from plotly import graph_objects as go
 import numpy as np
 from datetime import timedelta
-import mlflow
+from ml4cps._optional_mlflow import mlflow
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

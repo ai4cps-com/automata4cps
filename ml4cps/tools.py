@@ -60,7 +60,7 @@ def log_plotly_figure_to_mlflow(
     try:
         import mlflow
     except ImportError as exc:
-        raise ImportError("mlflow is required to log Plotly figures.") from exc
+        raise ImportError('Logging Plotly figures requires pip install "ml4cps[mlflow]".') from exc
 
     if fig is None:
         raise ValueError("fig must not be None.")

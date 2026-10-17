@@ -1,5 +1,5 @@
 import time as tm
-import mlflow
+from ml4cps._optional_mlflow import mlflow
 import numpy as np
 from datetime import timedelta
 import pprint
