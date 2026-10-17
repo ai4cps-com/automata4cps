@@ -28,7 +28,8 @@ setup(
     install_requires=read_req_file("install"),
     python_requires='>=3.6',
     extras_require={
-        "dev": read_req_file("dev"),
+        "torch": read_req_file("torch"),
+        "dev": read_req_file("dev") + read_req_file("torch"),
     },
     entry_points={
         "console_scripts": [],

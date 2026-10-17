@@ -13,7 +13,6 @@ joblib
 mlflow
 imageio
 imageio[ffmpeg]
-torch
 graphviz
 pydot
 pydotplus
