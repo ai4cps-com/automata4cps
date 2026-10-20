@@ -1531,8 +1531,8 @@ class DEBTA(automata.Automaton):
         return tuple(float(format(float(v), '.9g')) if isinstance(v, (float, np.floating))
                      else v for v in config)
 
-    def predict_reconfig(self, model_input, current_config, n=1, allowed_values=None):
-        """Return up to ``n`` alternative configuration tuples, most frequent first.
+    def predict_reconfig(self, model_input, current_config, n=5, allowed_values=None):
+        """Return up to ``n`` alternative configuration tuples (default 5), most frequent first.
 
         ``model_input`` uses the same sensor input format and preprocessing as
         :meth:`predict`. For a sequence, only its final predicted mode is used.
