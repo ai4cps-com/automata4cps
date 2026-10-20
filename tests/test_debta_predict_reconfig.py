@@ -22,7 +22,9 @@ class PredictReconfigTests(unittest.TestCase):
     def test_rank_aggregate_exclude_and_use_final_mode(self):
         self.model.set_configuration('Config[0,0]')
         with patch.object(self.model, 'predict', return_value=pd.Series(['b', 'a'])):
-            self.assertEqual(self.model.predict_reconfig([[0., 0.]], 'Config[0,0]'), [(1, 0)])
+            self.assertEqual(self.model.predict_reconfig([[0., 0.]], 'Config[0,0]'),
+                             [(1, 0), (0, 1)])
+            self.assertEqual(self.model.predict_reconfig([[0., 0.]], 'Config[0,0]', n=1), [(1, 0)])
             self.assertEqual(self.model.predict_reconfig([[0., 0.]], 'Config[0,0]', n=10),
                              [(1, 0), (0, 1)])
         self.assertEqual(self.model.configuration, 'Config[0,0]')
